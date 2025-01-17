@@ -82,7 +82,6 @@ router.addHandler('chapter', async ({ request, page, enqueueLinks, log }) => {
       selector: config.nextPageUrlOfChapterSelector,
       label: 'chapter'
     });
-    return;
   }
 });
 
