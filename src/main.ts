@@ -3,7 +3,7 @@ import { URL } from 'node:url';
 import fs from 'node:fs';
 
 
-const postsStore = await KeyValueStore.open('posts');
+const chaptersStore = await KeyValueStore.open('chapters');
 const configStore = await KeyValueStore.open('config');
 
 const router = createPlaywrightRouter();
@@ -34,7 +34,7 @@ router.addDefaultHandler(async ({ request, enqueueLinks, log }) => {
       // 章节列表页
       await enqueueLinks({
         selector: config.chapterUrlOfListSelector,
-        label: 'detail',
+        label: 'chapter',
       });
 
       // 下一页章节列表页
@@ -46,27 +46,27 @@ router.addDefaultHandler(async ({ request, enqueueLinks, log }) => {
   }
 });
 
-router.addHandler('detail', async ({ request, page, log }) => {
+router.addHandler('chapter', async ({ request, page, log }) => {
   const paths = new URL(request.url).pathname.split('/');
   const lastUrlPath = paths.pop();
   if (lastUrlPath?.endsWith('.html')) {
-    const postId = lastUrlPath.split('.').shift()!!;
+    const chapterId = lastUrlPath.split('.').shift()!!;
     const novalId = paths.pop()!!;
     const pageTitle = await page.title();
     log.info(`文章页 ${pageTitle}`, { url: request.url });
     const config = await configStore.getValue<NovalConfig>('config');
     if (!config?.titleOfChapterSelector) throw new Error('Noval config titleOfChapterSelector not found');
     if (!config?.contentOfChapterSelector) throw new Error('Noval config contentOfChapterSelector not found');
-    const postTitle = (await (await page.$(config.titleOfChapterSelector))!!.innerText()).trim();
-    const postContent = await (await page.$(config.contentOfChapterSelector))!!.innerText();
-    const postData = {
+    const chapterTitle = (await (await page.$(config.titleOfChapterSelector))!!.innerText()).trim();
+    const chapterContent = await (await page.$(config.contentOfChapterSelector))!!.innerText();
+    const chapterData = {
       novalId: novalId,
-      postId: postId,
-      title: postTitle,
-      content: postContent,
+      chapterId: chapterId,
+      title: chapterTitle,
+      content: chapterContent,
     };
-    // await pushData(postData, novalId);
-    await postsStore.setValue(`${novalId}_${postId}`, postData);
+    // await pushData(chapterData, novalId);
+    await chaptersStore.setValue<NovalChapter>(`${novalId}_${chapterId}`, chapterData);
 
     // 当前章节下一页
     const jumpInfos = await page.$$eval(config.nextPageUrlOfChapterSelector, ($btns) => {
@@ -80,7 +80,7 @@ router.addHandler('detail', async ({ request, page, log }) => {
     const nextPageJumpInfo = jumpInfos.find((jumpInfo) => jumpInfo.text === '下一页');
     if (nextPageJumpInfo && nextPageJumpInfo.href) {
       await crawler.addRequests(
-        [{ url:new URL(nextPageJumpInfo.href, request.loadedUrl).href, label: 'detail' }], 
+        [{ url:new URL(nextPageJumpInfo.href, request.loadedUrl).href, label: 'chapter' }], 
         { forefront: true }
       );
     }
@@ -98,12 +98,12 @@ const novalPath = `storage/novels/${config.novalId}.txt`;
 if(fs.existsSync(novalPath)){
   fs.rmSync(novalPath, { recursive: true });
 }
-await postsStore.forEachKey(async (key) => {
-  const novalPost = await postsStore.getValue<NovalPost>(key);
-  if (novalPost && novalPost.novalId === config.novalId) {
-    console.log(`${novalPath} append write novalId: ${novalPost.novalId}, postId: ${novalPost.postId}`);
-    let postContent = novalPost.content;
-    fs.appendFileSync(novalPath, `${postContent}\n\n`); 
+await chaptersStore.forEachKey(async (key) => {
+  const novalChapter = await chaptersStore.getValue<NovalChapter>(key);
+  if (novalChapter && novalChapter.novalId === config.novalId) {
+    console.log(`${novalPath} append write novalId: ${novalChapter.novalId}, chapterId: ${novalChapter.chapterId}`);
+    let chapterContent = novalChapter.content;
+    fs.appendFileSync(novalPath, `${chapterContent}\n\n`); 
   }
 });
 console.log('compose noval finished!');

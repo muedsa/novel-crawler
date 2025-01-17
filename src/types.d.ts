@@ -9,9 +9,9 @@ type NovalConfig = {
   nextPageUrlOfChapterSelector: string;
 }
 
-type NovalPost = {
+type NovalChapter = {
   novalId: string;
-  postId: string;
+  chapterId: string;
   title: string;
   content: string;
 }
