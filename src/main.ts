@@ -41,12 +41,11 @@ router.addDefaultHandler(async ({ request, enqueueLinks, log }) => {
       await enqueueLinks({
         selector: config.nextPageUrlOfListSelector,
       });
-      return;
     }
   }
 });
 
-router.addHandler('chapter', async ({ request, page, log }) => {
+router.addHandler('chapter', async ({ request, page, enqueueLinks, log }) => {
   const paths = new URL(request.url).pathname.split('/');
   const lastUrlPath = paths.pop();
   if (lastUrlPath?.endsWith('.html')) {
@@ -69,21 +68,21 @@ router.addHandler('chapter', async ({ request, page, log }) => {
     await chaptersStore.setValue<NovalChapter>(`${novalId}_${chapterId}`, chapterData);
 
     // 当前章节下一页
-    const jumpInfos = await page.$$eval(config.nextPageUrlOfChapterSelector, ($btns) => {
-      return $btns.map(($btn) => {
-        return {
-          text: $btn.innerHTML,
-          href: $btn.getAttribute('href'),
-        }
-      });
+    // const nextPageLink = await page.$(config.nextPageUrlOfChapterSelector);
+    // if (nextPageLink) {
+    //   const href = await nextPageLink.getAttribute('href');
+    //   if (href) {
+    //     await crawler.addRequests(
+    //       [{ url: new URL(href, request.loadedUrl).href, label: 'chapter' }],
+    //       { forefront: true }
+    //     );
+    //   }
+    // }
+    await enqueueLinks({
+      selector: config.nextPageUrlOfChapterSelector,
+      label: 'chapter'
     });
-    const nextPageJumpInfo = jumpInfos.find((jumpInfo) => jumpInfo.text === '下一页');
-    if (nextPageJumpInfo && nextPageJumpInfo.href) {
-      await crawler.addRequests(
-        [{ url:new URL(nextPageJumpInfo.href, request.loadedUrl).href, label: 'chapter' }], 
-        { forefront: true }
-      );
-    }
+    return;
   }
 });
 
