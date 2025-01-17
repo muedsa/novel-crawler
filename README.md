@@ -1,2 +1,2 @@
-# noval-crawler
+# novel-crawler
 Crawlee + PlaywrightCrawler + TypeScript

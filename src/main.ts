@@ -19,17 +19,16 @@ router.addDefaultHandler(async ({ request, enqueueLinks, log }) => {
   // 默认是章节列表页
   const paths = new URL(request.url).pathname.split('/');
   const lastUrlPath = paths.pop()!!;
-  const novalId = paths.pop()!!;
-  if (lastUrlPath?.startsWith('page') && lastUrlPath?.endsWith('.html')) {
+  const novelId = paths.pop()!!;
+  const config = await configStore.getValue<NovelConfig>('config');
+  if (!config) throw new Error('Novel config not found');
+  if (!config?.chapterUrlOfListSelector) throw new Error('Novel config chapterUrlOfListSelector not found');
+  if (!config?.nextPageUrlOfListSelector) throw new Error('Novel config nextPageUrlOfListSelector not found');
+  if (config.novelId == novelId && lastUrlPath?.startsWith('page') && lastUrlPath?.endsWith('.html')) {
     const pageNum = parseInt(lastUrlPath.replace('page', '').replace('.html', ''));
-    const config = await configStore.getValue<NovalConfig>('config');
-    if (!config) throw new Error('Noval config not found');
-    if (!config?.chapterUrlOfListSelector) throw new Error('Noval config chapterUrlOfListSelector not found');
-    if (!config?.nextPageUrlOfListSelector) throw new Error('Noval config nextPageUrlOfListSelector not found');
     if (pageNum >= config.lastPageNum) {
-      config.novalId = novalId;
       config.lastPageNum = pageNum;
-      await configStore.setValue<NovalConfig>('config', config);
+      await configStore.setValue<NovelConfig>('config', config);
 
       // 章节列表页
       await enqueueLinks({
@@ -50,22 +49,22 @@ router.addHandler('chapter', async ({ request, page, enqueueLinks, log }) => {
   const lastUrlPath = paths.pop();
   if (lastUrlPath?.endsWith('.html')) {
     const chapterId = lastUrlPath.split('.').shift()!!;
-    const novalId = paths.pop()!!;
+    const novelId = paths.pop()!!;
     const pageTitle = await page.title();
-    log.info(`文章页 ${pageTitle}`, { url: request.url });
-    const config = await configStore.getValue<NovalConfig>('config');
-    if (!config?.titleOfChapterSelector) throw new Error('Noval config titleOfChapterSelector not found');
-    if (!config?.contentOfChapterSelector) throw new Error('Noval config contentOfChapterSelector not found');
+    log.info(`章节页: ${pageTitle}`, { url: request.url });
+    const config = await configStore.getValue<NovelConfig>('config');
+    if (!config?.titleOfChapterSelector) throw new Error('Novel config titleOfChapterSelector not found');
+    if (!config?.contentOfChapterSelector) throw new Error('Novel config contentOfChapterSelector not found');
     const chapterTitle = (await (await page.$(config.titleOfChapterSelector))!!.innerText()).trim();
     const chapterContent = await (await page.$(config.contentOfChapterSelector))!!.innerText();
-    const chapterData = {
-      novalId: novalId,
+    const chapterData: NovelChapter = {
+      novelId: novelId,
       chapterId: chapterId,
       title: chapterTitle,
       content: chapterContent,
     };
-    // await pushData(chapterData, novalId);
-    await chaptersStore.setValue<NovalChapter>(`${novalId}_${chapterId}`, chapterData);
+    // await pushData(chapterData, novelId);
+    await chaptersStore.setValue<NovelChapter>(`${novelId}_${chapterId}`, chapterData);
 
     // 当前章节下一页
     // const nextPageLink = await page.$(config.nextPageUrlOfChapterSelector);
@@ -86,22 +85,26 @@ router.addHandler('chapter', async ({ request, page, enqueueLinks, log }) => {
 });
 
 console.log('crawler satrt!');
-const config = await configStore.getValue<NovalConfig>('config');
-if (!config) throw new Error('Noval config not found');
-await crawler.run([`${config.baseUrl}/${config.novalId}/page${config.lastPageNum}.html`]);
+const config = await configStore.getValue<NovelConfig>('config');
+if (!config) throw new Error('Novel config not found');
+await crawler.run([`${config.baseUrl}/${config.novelId}/page${config.lastPageNum}.html`]);
 console.log('crawler finished!');
 
-console.log('compose noval start!');
-const novalPath = `storage/novels/${config.novalId}.txt`;
-if(fs.existsSync(novalPath)){
-  fs.rmSync(novalPath, { recursive: true });
+console.log('compose novel start!');
+const novelDir = 'storage/novels';
+const novelPath = `${novelDir}/${config.novelId}.txt`;
+if(!fs.existsSync(novelDir)){
+  fs.mkdirSync(novelDir, { recursive: true });
+}
+if(fs.existsSync(novelPath)){
+  fs.rmSync(novelPath, { recursive: true });
 }
 await chaptersStore.forEachKey(async (key) => {
-  const novalChapter = await chaptersStore.getValue<NovalChapter>(key);
-  if (novalChapter && novalChapter.novalId === config.novalId) {
-    console.log(`${novalPath} append write novalId: ${novalChapter.novalId}, chapterId: ${novalChapter.chapterId}`);
-    let chapterContent = novalChapter.content;
-    fs.appendFileSync(novalPath, `${chapterContent}\n\n`); 
+  const novelChapter = await chaptersStore.getValue<NovelChapter>(key);
+  if (novelChapter && novelChapter.novelId === config.novelId) {
+    console.log(`${novelPath} append write novelId: ${novelChapter.novelId}, chapterId: ${novelChapter.chapterId}`);
+    let chapterContent = novelChapter.content;
+    fs.appendFileSync(novelPath, `${chapterContent}\n\n`); 
   }
 });
-console.log('compose noval finished!');
+console.log('compose novel finished!');

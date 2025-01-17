@@ -1,6 +1,6 @@
-type NovalConfig = {
+type NovelConfig = {
   baseUrl: string;
-  novalId: string;
+  novelId: string;
   lastPageNum: number;
   chapterUrlOfListSelector: string;
   nextPageUrlOfListSelector: string;
@@ -9,8 +9,8 @@ type NovalConfig = {
   nextPageUrlOfChapterSelector: string;
 }
 
-type NovalChapter = {
-  novalId: string;
+type NovelChapter = {
+  novelId: string;
   chapterId: string;
   title: string;
   content: string;
