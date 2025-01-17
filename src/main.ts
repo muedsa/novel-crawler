@@ -81,18 +81,23 @@ router.addHandler('detail', async ({ request, page, log }) => {
   }
 });
 
+console.log('crawler satrt!');
 const config = await configStore.getValue<NovalConfig>('config');
 if (!config) throw new Error('Noval config not found');
 await crawler.run([`${config.baseUrl}/${config.novalId}/page${config.lastPageNum}.html`]);
+console.log('crawler finished!');
 
-const novalDir = 'storage/novels';
-if(fs.existsSync(novalDir)){
-  fs.rmSync(novalDir, { recursive: true });
+console.log('compose noval start!');
+const novalPath = `storage/novels/${config.novalId}.txt`;
+if(fs.existsSync(novalPath)){
+  fs.rmSync(novalPath, { recursive: true });
 }
-fs.mkdirSync(novalDir);
 await postsStore.forEachKey(async (key) => {
   const novalPost = await postsStore.getValue<NovalPost>(key);
-  if (novalPost) {
-    fs.appendFileSync(`${novalDir}/${novalPost.novalId}.txt`, `${novalPost.content}\n\n`); 
+  if (novalPost && novalPost.novalId === config.novalId) {
+    console.log(`${novalPath} append write novalId: ${novalPost.novalId}, postId: ${novalPost.postId}`);
+    let postContent = novalPost.content;
+    fs.appendFileSync(novalPath, `${postContent}\n\n`); 
   }
 });
+console.log('compose noval finished!');
