@@ -5,6 +5,7 @@ import fs from 'node:fs';
 
 const postsStore = await KeyValueStore.open('posts');
 const configStore = await KeyValueStore.open('config');
+
 const router = createPlaywrightRouter();
 const crawler = new PlaywrightCrawler({
   requestHandler: router,
@@ -23,6 +24,8 @@ router.addDefaultHandler(async ({ request, enqueueLinks, log }) => {
     const pageNum = parseInt(lastUrlPath.replace('page', '').replace('.html', ''));
     const config = await configStore.getValue<NovalConfig>('config');
     if (!config) throw new Error('Noval config not found');
+    if (!config?.chapterUrlOfListSelector) throw new Error('Noval config chapterUrlOfListSelector not found');
+    if (!config?.nextPageUrlOfListSelector) throw new Error('Noval config nextPageUrlOfListSelector not found');
     if (pageNum >= config.lastPageNum) {
       config.novalId = novalId;
       config.lastPageNum = pageNum;
@@ -30,13 +33,13 @@ router.addDefaultHandler(async ({ request, enqueueLinks, log }) => {
 
       // 章节列表页
       await enqueueLinks({
-        selector: 'body > div.container > div.row.row-section > div > div:nth-child(4) > ul.section-list > li > a',
+        selector: config.chapterUrlOfListSelector,
         label: 'detail',
       });
 
       // 下一页章节列表页
       await enqueueLinks({
-        selector: 'body > div.container > div.row.row-section > div > div.listpage > span.right > a',
+        selector: config.nextPageUrlOfListSelector,
       });
       return;
     }
@@ -51,19 +54,22 @@ router.addHandler('detail', async ({ request, page, log }) => {
     const novalId = paths.pop()!!;
     const pageTitle = await page.title();
     log.info(`文章页 ${pageTitle}`, { url: request.url });
-    const $title = await page.$('#container > div > div > div.reader-main > h1')
-    const $content = await page.$('#content');
+    const config = await configStore.getValue<NovalConfig>('config');
+    if (!config?.titleOfChapterSelector) throw new Error('Noval config titleOfChapterSelector not found');
+    if (!config?.contentOfChapterSelector) throw new Error('Noval config contentOfChapterSelector not found');
+    const postTitle = (await (await page.$(config.titleOfChapterSelector))!!.innerText()).trim();
+    const postContent = await (await page.$(config.contentOfChapterSelector))!!.innerText();
     const postData = {
       novalId: novalId,
       postId: postId,
-      title: (await $title?.innerText())?.trim()!!,
-      content: await $content?.innerText()!!,
+      title: postTitle,
+      content: postContent,
     };
     // await pushData(postData, novalId);
     await postsStore.setValue(`${novalId}_${postId}`, postData);
 
     // 当前章节下一页
-    const jumpInfos = await page.$$eval('#container > div > div > div.reader-main > div.section-opt.m-bottom-opt > a', ($btns) => {
+    const jumpInfos = await page.$$eval(config.nextPageUrlOfChapterSelector, ($btns) => {
       return $btns.map(($btn) => {
         return {
           text: $btn.innerHTML,
