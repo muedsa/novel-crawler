@@ -95,6 +95,7 @@ console.log('crawler satrt!');
 const config = await configStore.getValue<NovelConfig>('config');
 if (!config) throw new Error('Novel config not found');
 await crawler.run([`${config.baseUrl}/${config.novelId}/page${config.lastPageNum}.html`]);
+await crawler.teardown();
 console.log('crawler finished!');
 
 console.log('compose novel start!');
