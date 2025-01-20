@@ -8,6 +8,13 @@ const configStore = await KeyValueStore.open('config');
 
 const router = createPlaywrightRouter();
 const crawler = new PlaywrightCrawler({
+  launchContext: {
+    launchOptions: {
+      args: [
+        '--disable-gpu', // Mitigates the "crashing GPU process" issue in Docker containers
+      ]
+    }
+  },
   requestHandler: router,
   sameDomainDelaySecs: 1,
   maxRequestRetries: 10,
