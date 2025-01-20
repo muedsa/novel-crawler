@@ -106,12 +106,37 @@ if(!fs.existsSync(novelDir)){
 if(fs.existsSync(novelPath)){
   fs.rmSync(novelPath, { recursive: true });
 }
+const chapterPartRegex = new RegExp('\\(第(\\d+)/(\\d+)页\\)');
 await chaptersStore.forEachKey(async (key) => {
   const novelChapter = await chaptersStore.getValue<NovelChapter>(key);
   if (novelChapter && novelChapter.novelId === config.novelId) {
     console.log(`${novelPath} append write novelId: ${novelChapter.novelId}, chapterId: ${novelChapter.chapterId}`);
     let chapterContent = novelChapter.content;
-    fs.appendFileSync(novelPath, `${chapterContent}\n\n`); 
+    let chapterContentLines = chapterContent.split('\n');
+    const firstLine = chapterContentLines[0];
+    if (novelChapter.content.startsWith(firstLine)) {
+      const matchResult = firstLine.match(chapterPartRegex);
+      if (matchResult && matchResult[1]) {
+        if (matchResult[1] === '1') {
+          chapterContentLines[0] = novelChapter.title;
+        } else {
+          chapterContentLines.shift();
+        }
+      }
+      if (chapterContentLines[chapterContentLines.length - 1] === '　　（本章未完，请点击下一页继续阅读）') {
+        chapterContentLines.pop();
+        while (chapterContentLines[chapterContentLines.length - 1] === '　　') {
+          chapterContentLines.pop();
+        }
+      }
+      chapterContent = chapterContentLines.join('\n');
+      if (matchResult && matchResult[1] && matchResult[2] && matchResult[1] == matchResult[2]) {
+        chapterContent += '\n　　\n　　\n';
+      } else {
+        chapterContent += '\n';
+      }
+    }
+    fs.appendFileSync(novelPath, chapterContent); 
   }
 });
 console.log('compose novel finished!');
