@@ -52,7 +52,7 @@ const composeChapter = (
   const firstLine = chapterContentLines[0];
   if (!chapterPart.content.startsWith(firstLine)) throw new Error(`Novel page #${pageNum} chapter '${chapterPartStoreKey}' content not start with title`);
   const matchResult = firstLine.match(chapterPartRegex);
-  if (!matchResult || matchResult[1] || matchResult[2]) throw new Error(`Novel page #${pageNum} chapter '${chapterPartStoreKey}' content not match chapterPartRegex`);
+  if (!matchResult || !matchResult[1] || !matchResult[2]) throw new Error(`Novel page #${pageNum} chapter '${chapterPartStoreKey}' content not match chapterPartRegex`);
   const pageInfo: NovelChapterPartInfo = {
     part: parseInt(matchResult[1]),
     maxPart: parseInt(matchResult[2]),
