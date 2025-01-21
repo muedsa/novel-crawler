@@ -6,6 +6,7 @@ import {
   PlaywrightCrawlingContext, 
   Dictionary 
 } from 'crawlee';
+import path from 'path';
 
 
 const createNovelCrawlerRouter = async (
@@ -37,24 +38,30 @@ const createNovelCrawlerRouter = async (
         await configStore.setValue<NovelConfig>('config', config);
 
         // 获取章节列表
-        const chapterPaths = await page.$$eval(config.chapterUrlOfListSelector, 
-          ($links) => $links.map(($link) => $link.getAttribute('href')!!));
-        const chapterIds: string[] = [];
+        const chapterInfos = await page.$$eval(config.chapterUrlOfListSelector, 
+          ($links) => $links.map(($link) => {
+            return {
+              name: $link.textContent!!,
+              path: $link.getAttribute('href')!!,
+            }
+          }));
+        const appendChapters: string[][] = [];
         const requestUrls: Source[] = [];
-        chapterPaths.forEach((chapterPath) => {
-          const chapterUrl = new URL(chapterPath, request.loadedUrl);
+        chapterInfos.forEach((chapterInfo) => {
+          const chapterUrl = new URL(chapterInfo.path, request.loadedUrl);
           const paths = chapterUrl.pathname.split('/');
           const lastUrlPath = paths.pop();
           if (lastUrlPath?.endsWith('.html')) {
             const chapterId = lastUrlPath.split('.').shift()!!;
             const novelId = paths.pop()!!;
             if(config.novelId == novelId) {
-              chapterIds.push(chapterId);
+              appendChapters.push([chapterId, chapterInfo.name]);
               requestUrls.push({ url: chapterUrl.href, label: 'chapter' });
             }
           }
         });
-        pageChapterMap[pageNum] = chapterIds;
+        log.info(`第${pageNum}页章节列表: `, appendChapters);
+        pageChapterMap[pageNum] = appendChapters.map(([chapterId]) => chapterId);
         await configStore.setValue<NovelPageChapterMap>(config.novelId, pageChapterMap);
 
         if (!config.disableChapterCrawler) {
