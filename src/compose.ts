@@ -28,13 +28,13 @@ const composeNovel = async (
       const firstChapterPartStoreKey = `${config.novelId}_${chapterId}`;
       const firstPageChapter = await chaptersStore.getValue<NovelChapterPart>(firstChapterPartStoreKey);
       if (!firstPageChapter) throw new Error(`Novel page #${pageNum} chapter '${firstChapterPartStoreKey}' missing`);
-      const firstPartInfo = composeChapter(novelPath, pageNum, firstPageChapter);
+      const firstPartInfo = composeChapter(novelPath, firstPageChapter, pageNum, firstChapterPartStoreKey);
       let part = firstPartInfo.part + 1;
       while (part <= firstPartInfo.maxPart) {
         const otherChapterPartStoreKey = `${config.novelId}_${chapterId}_${part}`;
         const otherChapterPart = await chaptersStore.getValue<NovelChapterPart>(otherChapterPartStoreKey);
         if (!otherChapterPart) throw new Error(`Novel page #${pageNum} chapter '${otherChapterPartStoreKey}' missing`);
-        composeChapter(novelPath, pageNum, otherChapterPart);
+        composeChapter(novelPath, otherChapterPart, pageNum, otherChapterPartStoreKey);
         part++;
       }
     });
@@ -43,15 +43,16 @@ const composeNovel = async (
 
 const composeChapter = (
   novelPath: string,
-  pageNum: number,
   chapterPart: NovelChapterPart,
+  pageNum: number,
+  chapterPartStoreKey: string,
 ): NovelChapterPartInfo => {
   let chapterContent = chapterPart.content;
   let chapterContentLines = chapterContent.split('\n');
   const firstLine = chapterContentLines[0];
-  if (!chapterPart.content.startsWith(firstLine)) throw new Error(`Novel page #${pageNum} chapter '${chapterPart.chapterPartId}' content not start with title`);
+  if (!chapterPart.content.startsWith(firstLine)) throw new Error(`Novel page #${pageNum} chapter '${chapterPartStoreKey}' content not start with title`);
   const matchResult = firstLine.match(chapterPartRegex);
-  if (!matchResult || matchResult[1] || matchResult[2]) throw new Error(`Novel page #${pageNum} chapter '${chapterPart.chapterPartId}' content not match chapterPartRegex`);
+  if (!matchResult || matchResult[1] || matchResult[2]) throw new Error(`Novel page #${pageNum} chapter '${chapterPartStoreKey}' content not match chapterPartRegex`);
   const pageInfo: NovelChapterPartInfo = {
     part: parseInt(matchResult[1]),
     maxPart: parseInt(matchResult[2]),
