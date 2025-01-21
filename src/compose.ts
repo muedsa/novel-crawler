@@ -24,7 +24,7 @@ const composeNovel = async (
   for (let pageNum = 1; pageNum <= maxPageNum; pageNum++) {
     const chapterIds = pageChapterMap[pageNum];
     if (!chapterIds || chapterIds.length === 0) throw new Error(`Novel page #${pageNum} chapterIds is empty`);
-    chapterIds.forEach(async (chapterId) => {
+    for (const chapterId of chapterIds) {
       const firstChapterPartStoreKey = `${config.novelId}_${chapterId}`;
       const firstPageChapter = await chaptersStore.getValue<NovelChapterPart>(firstChapterPartStoreKey);
       if (!firstPageChapter) throw new Error(`Novel page #${pageNum} chapter '${firstChapterPartStoreKey}' missing`);
@@ -37,7 +37,7 @@ const composeNovel = async (
         composeChapter(novelPath, otherChapterPart, pageNum, otherChapterPartStoreKey);
         part++;
       }
-    });
+    }
   }
 }
 
@@ -75,7 +75,7 @@ const composeChapter = (
     chapterContent += '\n';
   }
   fs.appendFileSync(novelPath, chapterContent);
-  console.log(`Novel page #${pageNum} chapter '${chapterPartStoreKey}' composed to ${novelPath}`);
+  console.log(`Novel page #${pageNum} chapter ${firstLine}(${chapterPartStoreKey}) composed to ${novelPath}`);
   return partInfo;
 }
 
