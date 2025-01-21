@@ -18,9 +18,7 @@ type NovelChapterPart = {
   content: string;
 }
 
-type NovelPageChapterMap = {
-  [page: number]: string[]
-}
+type NovelPageChapterMap = Record<number, string[]>
 
 type NovelChapterPartInfo = {
   part: number;
