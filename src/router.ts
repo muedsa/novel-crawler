@@ -6,7 +6,6 @@ import {
   PlaywrightCrawlingContext, 
   Dictionary 
 } from 'crawlee';
-import path from 'path';
 
 
 const createNovelCrawlerRouter = async (
@@ -98,8 +97,8 @@ const createNovelCrawlerRouter = async (
       // await pushData(chapterData, novelId);
       const chapterPartStoreKey = `${novelId}_${chapterPartId}`;
       await chaptersStore.setValue<NovelChapterPart>(`${novelId}_${chapterPartId}`, chapterPartData);
-      log.info(`章节: ${chapterTitle} saved to ${chapterPartStoreKey}`, { url: request.url });
-  
+      log.info(`Saved ${chapterTitle} to ${chapterPartStoreKey}`, { url: request.url });
+
       // 当前章节下一页
       const nextPageLink = await page.$(config.nextPageUrlOfChapterSelector);
       if (nextPageLink) {
