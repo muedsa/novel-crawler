@@ -82,14 +82,16 @@ const createNovelCrawlerRouter = async (
       log.info(`章节页: ${pageTitle}`, { url: request.url });
       const chapterTitle = (await (await page.$(config.titleOfChapterSelector))!!.innerText()).trim();
       const chapterContent = await (await page.$(config.contentOfChapterSelector))!!.innerText();
-      const chapterData: NovelChapterPart = {
+      const chapterPartData: NovelChapterPart = {
         novelId: novelId,
         chapterPartId: chapterPartId,
         title: chapterTitle,
         content: chapterContent,
       };
       // await pushData(chapterData, novelId);
-      await chaptersStore.setValue<NovelChapterPart>(`${novelId}_${chapterPartId}`, chapterData);
+      const chapterPartStoreKey = `${novelId}_${chapterPartId}`;
+      await chaptersStore.setValue<NovelChapterPart>(`${novelId}_${chapterPartId}`, chapterPartData);
+      log.info(`章节: ${chapterTitle} saved to ${chapterPartStoreKey}`, { url: request.url });
   
       // 当前章节下一页
       const nextPageLink = await page.$(config.nextPageUrlOfChapterSelector);
