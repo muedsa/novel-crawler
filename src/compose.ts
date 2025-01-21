@@ -53,11 +53,11 @@ const composeChapter = (
   if (!chapterPart.content.startsWith(firstLine)) throw new Error(`Novel page #${pageNum} chapter '${chapterPartStoreKey}' content not start with title`);
   const matchResult = firstLine.match(chapterPartRegex);
   if (!matchResult || !matchResult[1] || !matchResult[2]) throw new Error(`Novel page #${pageNum} chapter '${chapterPartStoreKey}' content not match chapterPartRegex`);
-  const pageInfo: NovelChapterPartInfo = {
+  const partInfo: NovelChapterPartInfo = {
     part: parseInt(matchResult[1]),
     maxPart: parseInt(matchResult[2]),
   };
-  if (pageInfo.part === 1) {
+  if (partInfo.part === 1) {
     chapterContentLines[0] = chapterPart.title;
   } else {
     chapterContentLines.shift();
@@ -69,13 +69,14 @@ const composeChapter = (
     }
   }
   chapterContent = chapterContentLines.join('\n');
-  if (matchResult && matchResult[1] && matchResult[2] && matchResult[1] == matchResult[2]) {
+  if (partInfo.part == partInfo.maxPart) {
     chapterContent += '\n　　\n　　\n';
   } else {
     chapterContent += '\n';
   }
   fs.appendFileSync(novelPath, chapterContent);
-  return pageInfo;
+  console.log(`Novel page #${pageNum} chapter '${chapterPartStoreKey}' composed to ${novelPath}`);
+  return partInfo;
 }
 
 export { composeNovel };
