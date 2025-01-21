@@ -58,7 +58,7 @@ const createNovelCrawlerRouter = async (
         await configStore.setValue<NovelPageChapterMap>(config.novelId, pageChapterMap);
 
         if (!config.disableChapterCrawler) {
-          await addRequests(requestUrls, { forefront: true })
+          await addRequests(requestUrls)
         }
 
         if (config.endPageNum <= 0 || pageNum < config.endPageNum) {
