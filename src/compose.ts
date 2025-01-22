@@ -43,7 +43,7 @@ const composeNovel = async (
   const novelInfo = await novelStore.getValue<NovelInfo>(`${config.novelId}_info`);
   if (novelInfo?.novelName) {
     const newNovelPath = `${novelDir}/${novelInfo.novelName}.txt`;
-    console.log(`Copy file ${newNovelPath} to ${novelPath}`);
+    console.log(`Copy file ${novelPath} to ${newNovelPath}`);
     fs.copyFileSync(novelPath, newNovelPath);
   }
 }
