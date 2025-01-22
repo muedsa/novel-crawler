@@ -20,6 +20,11 @@ type NovelChapterPart = {
 
 type NovelPageChapterMap = Record<number, string[]>
 
+type NovelInfo = {
+  novelId: string;
+  name: string;
+}
+
 type NovelChapterPartInfo = {
   part: number;
   maxPart: number;

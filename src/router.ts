@@ -9,11 +9,11 @@ import {
 
 
 const createNovelCrawlerRouter = async (
-  configStore: KeyValueStore, 
+  novelStore: KeyValueStore,
   chaptersStore: KeyValueStore,
 ) : Promise<RouterHandler<PlaywrightCrawlingContext<Dictionary>>> => {
   const router = createPlaywrightRouter();
-  const config = await configStore.getValue<NovelConfig>('config');
+  const config = await KeyValueStore.getValue<NovelConfig>('config');
   if (!config) throw new Error('Novel config not found');
   if (!config.baseUrl) throw new Error('Novel config not found');
   if (!config.novelId) throw new Error('Novel config novelId not found');
@@ -21,7 +21,7 @@ const createNovelCrawlerRouter = async (
   if (!config.nextPageUrlOfListSelector) throw new Error('Novel config nextPageUrlOfListSelector not found');
   if (!config.titleOfChapterSelector) throw new Error('Novel config titleOfChapterSelector not found');
   if (!config.contentOfChapterSelector) throw new Error('Novel config contentOfChapterSelector not found');
-  const pageChapterMap = await configStore.getValue<NovelPageChapterMap>(config.novelId, {});
+  const pageChapterMap = await novelStore.getValue<NovelPageChapterMap>(`${config.novelId}_map`, {});
 
   router.addDefaultHandler(async ({ request, page, enqueueLinks, addRequests, log }) => {
     log.info(`列表页: ${request.url}...`);
@@ -34,7 +34,7 @@ const createNovelCrawlerRouter = async (
       const pageNum = parseInt(lastUrlPath.replace('page', '').replace('.html', ''));
       if (pageNum >= config.lastPageNum) {
         config.lastPageNum = pageNum;
-        await configStore.setValue<NovelConfig>('config', config);
+        await KeyValueStore.setValue<NovelConfig>('config', config);
 
         // 获取章节列表
         const chapterInfos = await page.$$eval(config.chapterUrlOfListSelector, 
@@ -61,7 +61,7 @@ const createNovelCrawlerRouter = async (
         });
         log.info(`第${pageNum}页章节列表: `, appendChapters);
         pageChapterMap[pageNum] = appendChapters.map(([chapterId]) => chapterId);
-        await configStore.setValue<NovelPageChapterMap>(config.novelId, pageChapterMap);
+        await novelStore.setValue<NovelPageChapterMap>(config.novelId, pageChapterMap);
 
         if (!config.disableChapterCrawler) {
           await addRequests(requestUrls)
