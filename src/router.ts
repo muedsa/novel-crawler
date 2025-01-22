@@ -9,11 +9,12 @@ import {
 
 
 const createNovelCrawlerRouter = async (
+  configStore: KeyValueStore,
   novelStore: KeyValueStore,
   chaptersStore: KeyValueStore,
 ) : Promise<RouterHandler<PlaywrightCrawlingContext<Dictionary>>> => {
   const router = createPlaywrightRouter();
-  const config = await KeyValueStore.getValue<NovelConfig>('config');
+  const config = await configStore.getValue<NovelConfig>('config');
   if (!config) throw new Error('Novel config not found');
   if (!config.baseUrl) throw new Error('Novel config not found');
   if (!config.novelId) throw new Error('Novel config novelId not found');
@@ -34,7 +35,11 @@ const createNovelCrawlerRouter = async (
       const pageNum = parseInt(lastUrlPath.replace('page', '').replace('.html', ''));
       if (pageNum >= config.lastPageNum) {
         config.lastPageNum = pageNum;
-        await KeyValueStore.setValue<NovelConfig>('config', config);
+        await configStore.setValue<NovelConfig>('config', config);
+
+        const novelName = await((await page.$(config.novelNameOfListSelector))!!.textContent());
+        if (!novelName) throw new Error('Novel name not found');
+        await novelStore.setValue<NovelInfo>(`${config.novelId}_info`, { novelId: config.novelId, novelName: novelName });
 
         // 获取章节列表
         const chapterInfos = await page.$$eval(config.chapterUrlOfListSelector, 
@@ -61,7 +66,7 @@ const createNovelCrawlerRouter = async (
         });
         log.info(`第${pageNum}页章节列表: `, appendChapters);
         pageChapterMap[pageNum] = appendChapters.map(([chapterId]) => chapterId);
-        await novelStore.setValue<NovelPageChapterMap>(config.novelId, pageChapterMap);
+        await novelStore.setValue<NovelPageChapterMap>(`${config.novelId}_map`, pageChapterMap);
 
         if (!config.disableChapterCrawler) {
           await addRequests(requestUrls)

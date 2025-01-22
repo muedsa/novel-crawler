@@ -3,6 +3,7 @@ type NovelConfig = {
   novelId: string;
   lastPageNum: number;
   endPageNum: number;
+  novelNameOfListSelector: string;
   chapterUrlOfListSelector: string;
   nextPageUrlOfListSelector: string;
   titleOfChapterSelector: string;
@@ -22,7 +23,7 @@ type NovelPageChapterMap = Record<number, string[]>
 
 type NovelInfo = {
   novelId: string;
-  name: string;
+  novelName: string;
 }
 
 type NovelChapterPartInfo = {

@@ -6,10 +6,11 @@ const chapterPartRegex = new RegExp('\\(第(\\d+)/(\\d+)页\\)');
 
 const composeNovel = async (
   novelDir: string,
+  configStore: KeyValueStore,
   novelStore: KeyValueStore,
   chaptersStore: KeyValueStore,
 ) => {
-  const config = await KeyValueStore.getValue<NovelConfig>('config');
+  const config = await configStore.getValue<NovelConfig>('config');
   if (!config || !config.novelId) throw new Error('Novel config novelId not found');
   const pageChapterMap = await novelStore.getValue<NovelPageChapterMap>(`${config.novelId}_map`);
   if (!pageChapterMap || Object.keys(pageChapterMap).length == 0) throw new Error('Novel pageChapterMap is empty');
@@ -38,6 +39,12 @@ const composeNovel = async (
         part++;
       }
     }
+  }
+  const novelInfo = await novelStore.getValue<NovelInfo>(`${config.novelId}_info`);
+  if (novelInfo?.novelName) {
+    const newNovelPath = `${novelDir}/${novelInfo.novelName}.txt`;
+    console.log(`Copy file ${newNovelPath} to ${novelPath}`);
+    fs.copyFileSync(novelPath, newNovelPath);
   }
 }
 
