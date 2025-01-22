@@ -9,6 +9,7 @@ create file `storage\key_value_stores\config\config.json`
   "novelId": "l116-116389",
   "lastPageNum": 1,
   "endPageNum": 1,
+  "novelNameOfListSelector": "body > div.container > div.row.row-detail > div > div > div.info > div.top > h1",
   "chapterUrlOfListSelector": "body > div.container > div.row.row-section > div > div:nth-child(4) > ul.section-list > li > a",
   "nextPageUrlOfListSelector": "body > div.container > div.row.row-section > div > div.listpage > span.right > a",
   "titleOfChapterSelector": "#container > div > div > div.reader-main > h1",
