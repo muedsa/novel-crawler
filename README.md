@@ -2,13 +2,17 @@
 Crawlee + PlaywrightCrawler + TypeScript
 
 ## Config
-create file `storage\key_value_stores\config\config.json`
+Create file `storage\key_value_stores\config\config.json`
 ```json
 {
   "baseUrl": "http://example.com",
-  "novelId": "l116-116389",
-  "lastPageNum": 1,
-  "endPageNum": 1,
+  "chapterListUrlTemplate": "{baseUrl}/{novelId}/page{pageNum}.html",
+  "novels": [
+    {
+      "novelId": "l116-116389",
+      "endPageNum": 0
+    }
+  ],
   "novelNameOfListSelector": "body > div.container > div.row.row-detail > div > div > div.info > div.top > h1",
   "chapterUrlOfListSelector": "body > div.container > div.row.row-section > div > div:nth-child(4) > ul.section-list > li > a",
   "nextPageUrlOfListSelector": "body > div.container > div.row.row-section > div > div.listpage > span.right > a",
@@ -18,3 +22,5 @@ create file `storage\key_value_stores\config\config.json`
   "disableChapterCrawler": false
 }
 ```
+
+Modify or delete `storage\key_value_stores\config\runtime.json`
