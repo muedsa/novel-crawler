@@ -1,8 +1,12 @@
 type NovelConfig = {
-  baseUrl: string;
   novelId: string;
-  lastPageNum: number;
   endPageNum: number;
+}
+
+type BaseConfig = {
+  baseUrl: string;
+  chapterListUrlTemplate: string;
+  novels: NovelConfig[];
   novelNameOfListSelector: string;
   chapterUrlOfListSelector: string;
   nextPageUrlOfListSelector: string;
@@ -10,6 +14,11 @@ type NovelConfig = {
   contentOfChapterSelector: string;
   nextPageUrlOfChapterSelector: string;
   disableChapterCrawler: boolean;
+}
+
+type RuntimeConfig = {
+  novelIndex: number;
+  lastPageNum: number;
 }
 
 type NovelChapterPart = {
@@ -24,6 +33,7 @@ type NovelPageChapterMap = Record<number, string[]>
 type NovelInfo = {
   novelId: string;
   novelName: string;
+  pageChapterMap: NovelPageChapterMap;
 }
 
 type NovelChapterPartInfo = {

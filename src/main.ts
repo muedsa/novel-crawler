@@ -1,34 +1,31 @@
-import { PlaywrightCrawler, KeyValueStore } from 'crawlee';
-import { createNovelCrawlerRouter } from './router.js';
+import { createNovelCrawler } from './crawler.js';
 import { composeNovel } from './compose.js';
+import { getAndValidBaseConfig, getRuntimeConfig, saveRuntimeConfig } from './store.js';
 
-const configStore = await KeyValueStore.open('config');
-const novelStore = await KeyValueStore.open('novel');
-const chaptersStore = await KeyValueStore.open('chapters');
 
-const crawler = new PlaywrightCrawler({
-  launchContext: {
-    launchOptions: {
-      args: [
-        '--disable-gpu', // Mitigates the "crashing GPU process" issue in Docker containers
-      ]
-    }
-  },
-  requestHandler: await createNovelCrawlerRouter(configStore, novelStore, chaptersStore),
-  sameDomainDelaySecs: 1,
-  maxRequestRetries: 10,
-  //maxRequestsPerCrawl: 100, // Comment this option to scrape the full website.
-  headless: true,
-});
-
-console.log('crawler satrt!');
-const config = await configStore.getValue<NovelConfig>('config');
-if (!config) throw new Error('Novel config not found');
-await crawler.run([`${config.baseUrl}/${config.novelId}/page${config.lastPageNum}.html`]);
-await crawler.teardown();
-console.log('crawler finished!');
-
-console.log('compose novel start!');
-const novelDir = 'storage/novels';
-await composeNovel(novelDir, configStore, novelStore, chaptersStore);
-console.log('compose novel finished!');
+console.log('novel-crawler launch!');
+let config = await getAndValidBaseConfig();
+const runtimeConfig = await getRuntimeConfig() ?? { novelIndex: 0, lastPageNum: 1 };
+while(runtimeConfig.novelIndex < config.novels.length) {
+  const novelConfig = config.novels[runtimeConfig.novelIndex];
+  if (runtimeConfig.novelIndex >= config.novels.length) 
+    throw new Error(`Runtime config error, index #${runtimeConfig.novelIndex} of novels(size=${config.novels.length}) is out of range`);
+  console.log(`crawler ${novelConfig.novelId} satrt!`, novelConfig, runtimeConfig);
+  const crawler = await createNovelCrawler(novelConfig, config, runtimeConfig);
+  await crawler.run([
+    config.chapterListUrlTemplate
+      .replace('{baseUrl}', config.baseUrl)
+      .replace('{novelId}', novelConfig.novelId)
+      .replace('{pageNum}', runtimeConfig.lastPageNum.toString())
+  ]);
+  await crawler.teardown();
+  console.log(`crawler ${novelConfig.novelId} finished!`);
+  console.log('compose novel start!');
+  await composeNovel(novelConfig.novelId);
+  console.log('compose novel finished!');
+  runtimeConfig.novelIndex++;
+  runtimeConfig.lastPageNum = 1;
+  await saveRuntimeConfig(runtimeConfig);
+  config = await getAndValidBaseConfig();
+}
+console.log('novel-crawler all tasks completed!');
