@@ -1,31 +1,43 @@
-import { createNovelCrawler } from './crawler.js';
-import { composeNovel } from './compose.js';
-import { getAndValidBaseConfig, getRuntimeConfig, saveRuntimeConfig } from './store.js';
+import { createNovelCrawler } from "./crawler.js";
+import { composeNovel } from "./compose.js";
+import {
+  getAndValidBaseConfig,
+  getRuntimeConfig,
+  saveRuntimeConfig,
+} from "./store.js";
 
-
-console.log('novel-crawler launch!');
+console.log("novel-crawler launch!");
 let config = await getAndValidBaseConfig();
-const runtimeConfig = await getRuntimeConfig() ?? { novelIndex: 0, lastPageNum: 1 };
-while(runtimeConfig.novelIndex < config.novels.length) {
+const runtimeConfig = (await getRuntimeConfig()) ?? {
+  novelIndex: 0,
+  lastPageNum: 1,
+};
+while (runtimeConfig.novelIndex < config.novels.length) {
   const novelConfig = config.novels[runtimeConfig.novelIndex];
-  if (runtimeConfig.novelIndex >= config.novels.length) 
-    throw new Error(`Runtime config error, index #${runtimeConfig.novelIndex} of novels(size=${config.novels.length}) is out of range`);
-  console.log(`crawler ${novelConfig.novelId} satrt!`, novelConfig, runtimeConfig);
+  if (runtimeConfig.novelIndex >= config.novels.length)
+    throw new Error(
+      `Runtime config error, index #${runtimeConfig.novelIndex} of novels(size=${config.novels.length}) is out of range`,
+    );
+  console.log(
+    `crawler ${novelConfig.novelId} satrt!`,
+    novelConfig,
+    runtimeConfig,
+  );
   const crawler = await createNovelCrawler(novelConfig, config, runtimeConfig);
   await crawler.run([
     config.chapterListUrlTemplate
-      .replace('{baseUrl}', config.baseUrl)
-      .replace('{novelId}', novelConfig.novelId)
-      .replace('{pageNum}', runtimeConfig.lastPageNum.toString())
+      .replace("{baseUrl}", config.baseUrl)
+      .replace("{novelId}", novelConfig.novelId)
+      .replace("{pageNum}", runtimeConfig.lastPageNum.toString()),
   ]);
   await crawler.teardown();
   console.log(`crawler ${novelConfig.novelId} finished!`);
-  console.log('compose novel start!');
+  console.log("compose novel start!");
   await composeNovel(novelConfig.novelId);
-  console.log('compose novel finished!');
+  console.log("compose novel finished!");
   runtimeConfig.novelIndex++;
   runtimeConfig.lastPageNum = 1;
   await saveRuntimeConfig(runtimeConfig);
   config = await getAndValidBaseConfig();
 }
-console.log('novel-crawler all tasks completed!');
+console.log("novel-crawler all tasks completed!");
