@@ -52,6 +52,7 @@ const server = createServer(async (req, res) => {
               } else {
                 const ext = extname(pathname).slice(1);
                 res.writeHead(200, {
+                  "Cache-Control": "max-age=31536000",
                   "Content-Type": mimeTypes[ext] ?? mimeTypes.txt,
                 });
                 res.end(data);
