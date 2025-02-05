@@ -139,9 +139,11 @@ const createNovelCrawlerRouter = async (
       const chapterTitle = (
         await (await page.$(config.titleOfChapterSelector))!!.innerText()
       ).trim();
-      const chapterContent = await (await page.$(
-        config.contentOfChapterSelector,
-      ))!!.innerText();
+      const chapterContent = (
+        await (await page.$(config.contentOfChapterSelector))!!.innerText()
+      )
+        .trim()
+        .replace(/\u2028/g, "");
       const chapterPartData: NovelChapterPart = {
         novelId: novelId,
         chapterPartId: chapterPartId,
