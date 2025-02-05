@@ -1,7 +1,7 @@
 import { KeyValueStore } from "crawlee";
 
 const configStore = await KeyValueStore.open("config");
-const novelStore = await KeyValueStore.open("novel");
+const novelsStore = await KeyValueStore.open("novels");
 const chaptersStore = await KeyValueStore.open("chapters");
 
 const getBaseConfig = async () =>
@@ -35,10 +35,10 @@ const saveRuntimeConfig = async (runtimeConfig: RuntimeConfig) =>
   await configStore.setValue<RuntimeConfig>("runtime", runtimeConfig);
 
 const getNovelInfo = async (novelId: string) =>
-  await novelStore.getValue<NovelInfo>(`${novelId}`);
+  await novelsStore.getValue<NovelInfo>(`${novelId}`);
 
 const saveNovelInfo = async (novelInfo: NovelInfo) =>
-  await novelStore.setValue<NovelInfo>(`${novelInfo.novelId}`, novelInfo);
+  await novelsStore.setValue<NovelInfo>(`${novelInfo.novelId}`, novelInfo);
 
 const getNovelChapterPart = async (novelId: string, chapterPartId: string) =>
   await chaptersStore.getValue<NovelChapterPart>(`${novelId}_${chapterPartId}`);
