@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import { getNovelChapterPart, getNovelInfo, novelDir } from "./store.js";
-
-const chapterPartRegex = new RegExp("\\(第(\\d+)/(\\d+)页\\)");
+import { parseNovelChapterPartInfo } from "./utils.js";
 
 const composeNovel = async (novelId: string): Promise<void> => {
   const novelInfo = await getNovelInfo(novelId);
@@ -71,15 +70,11 @@ const composeChapter = async (
     throw new Error(
       `Novel page #${pageNum} novel '${novelId}' chapter '${chapterPartId}' content not start with title`,
     );
-  const matchResult = firstLine.match(chapterPartRegex);
-  if (!matchResult || !matchResult[1] || !matchResult[2])
+  const partInfo = parseNovelChapterPartInfo(firstLine);
+  if (!partInfo)
     throw new Error(
-      `Novel page #${pageNum} novel '${novelId}' chapter '${chapterPartId}' content not match chapterPartRegex`,
+      `Novel page #${pageNum} novel '${novelId}' chapter '${chapterPartId}' content not match chapterPartInfoRegex`,
     );
-  const partInfo: NovelChapterPartInfo = {
-    part: parseInt(matchResult[1]),
-    maxPart: parseInt(matchResult[2]),
-  };
   if (partInfo.part === 1) {
     chapterContentLines[0] = chapterPart.title;
   } else {

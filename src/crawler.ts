@@ -7,11 +7,13 @@ import {
   PlaywrightCrawler,
 } from "crawlee";
 import {
+  getNovelChapterPart,
   getNovelInfo,
   saveNovelChapterPart,
   saveNovelInfo,
   saveRuntimeConfig,
 } from "./store.js";
+import { parseNovelChapterPartInfo } from "./utils.js";
 
 const createNovelCrawler = async (
   novelConfig: NovelConfig,
@@ -84,7 +86,7 @@ const createNovelCrawlerRouter = async (
           );
           const appendChapters: string[][] = [];
           const requestUrls: Source[] = [];
-          chapterInfos.forEach((chapterInfo) => {
+          for await (const chapterInfo of chapterInfos) {
             const chapterUrl = new URL(chapterInfo.path, request.loadedUrl);
             const paths = chapterUrl.pathname.split("/");
             const lastUrlPath = paths.pop();
@@ -93,10 +95,67 @@ const createNovelCrawlerRouter = async (
               const novelIdOfChapterPage = paths.pop()!!;
               if (novelIdOfChapterPage === novelId) {
                 appendChapters.push([chapterId, chapterInfo.name]);
-                requestUrls.push({ url: chapterUrl.href, label: "chapter" });
+                if (!config.focrcedChapterCrawler) {
+                  // 如果章节已经存在于Store中，则跳过该章节的爬取，以避免重复爬取
+                  const chapterPart = await getNovelChapterPart(
+                    novelId,
+                    chapterId,
+                  );
+                  if (
+                    !chapterPart ||
+                    !chapterPart.title ||
+                    !chapterPart.content
+                  ) {
+                    requestUrls.push({
+                      url: chapterUrl.href,
+                      label: "chapter",
+                    });
+                  } else {
+                    const partInfo = parseNovelChapterPartInfo(
+                      chapterPart.content.split("\n")[0],
+                    );
+                    if (!partInfo) {
+                      requestUrls.push({
+                        url: chapterUrl.href,
+                        label: "chapter",
+                      });
+                    } else if (partInfo.maxPart > 1) {
+                      // 判断章节其他页是否已经存在于Store中
+                      let part = partInfo.part + 1;
+                      while (part <= partInfo.maxPart) {
+                        const otherChapterPartId = `${chapterId}_${part}`;
+                        const otherChapterPart = await getNovelChapterPart(
+                          novelId,
+                          otherChapterPartId,
+                        );
+                        if (
+                          !otherChapterPart ||
+                          !otherChapterPart.title ||
+                          !otherChapterPart.content
+                        ) {
+                          requestUrls.push({
+                            url: chapterUrl.href,
+                            label: "chapter",
+                          });
+                          break;
+                        }
+                        part++;
+                      }
+                      console.log(
+                        "章节已经存在于Store中，跳过该章节的爬取!",
+                        chapterInfo,
+                      );
+                    }
+                  }
+                } else {
+                  requestUrls.push({
+                    url: chapterUrl.href,
+                    label: "chapter",
+                  });
+                }
               }
             }
-          });
+          }
           log.info(`第${pageNum}页章节列表: `, appendChapters);
           pageChapterMap[pageNum] = appendChapters.map(
             ([chapterId]) => chapterId,
@@ -108,7 +167,13 @@ const createNovelCrawlerRouter = async (
           });
 
           if (!config.disableChapterCrawler) {
-            await addRequests(requestUrls);
+            if (requestUrls.length > 0) {
+              await addRequests(requestUrls);
+            }
+          } else {
+            console.log(
+              "Chapter crawler is disabled, at config.json `disableChapterCrawler: false`",
+            );
           }
 
           if (novelConfig.endPageNum <= 0 || pageNum < novelConfig.endPageNum) {

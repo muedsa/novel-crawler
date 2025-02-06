@@ -22,7 +22,8 @@ Create file `storage\key_value_stores\config\config.json`
   "titleOfChapterSelector": "#container > div > div > div.reader-main > h1",
   "contentOfChapterSelector": "#content",
   "nextPageUrlOfChapterSelector": "#container > div > div > div.reader-main > div.section-opt.m-bottom-opt > a:has-text(\"下一页\")",
-  "disableChapterCrawler": false
+  "disableChapterCrawler": false,
+  "focrcedChapterCrawler": false
 }
 ```
 

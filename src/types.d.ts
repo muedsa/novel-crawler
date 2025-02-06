@@ -14,6 +14,7 @@ type BaseConfig = {
   contentOfChapterSelector: string;
   nextPageUrlOfChapterSelector: string;
   disableChapterCrawler: boolean;
+  focrcedChapterCrawler: boolean;
 };
 
 type RuntimeConfig = {
