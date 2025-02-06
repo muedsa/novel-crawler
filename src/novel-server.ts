@@ -4,7 +4,8 @@ import { join, normalize, resolve, extname } from "path";
 
 const port = parseInt(process.argv[2] || "8233");
 const rootDirPath = normalize(resolve("./storage"));
-const supportedPath = [
+const supportedPathPrefixes = [
+  "/key_value_stores/default/SDK_CRAWLER_STATISTICS", // SDK_CRAWLER_STATISTICS_*.json
   "/key_value_stores/chapters",
   "/key_value_stores/novels",
   "/novels",
@@ -42,7 +43,7 @@ const server = createServer(async (req, res) => {
           res.writeHead(200, { "Content-Type": mimeTypes.html });
           res.end(html);
         } else if (stat.isFile()) {
-          if (!supportedPath.some((path) => pathname.startsWith(path))) {
+          if (!supportedPathPrefixes.some((path) => pathname.startsWith(path))) {
             res.writeHead(403, { "Content-Type": mimeTypes.html });
             res.end(`403: ${pathname} not supported`);
           } else {
