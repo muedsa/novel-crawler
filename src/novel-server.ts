@@ -1,11 +1,18 @@
+import { randomBytes } from "crypto";
 import { readFile, opendirSync, stat, Dir } from "fs";
+import { OutgoingHttpHeaders } from "http";
 import { createServer } from "http";
 import { join, normalize, resolve, extname } from "path";
 
 const port = parseInt(process.argv[2] || "8233");
+const auth = process.argv[3] || randomBytes(8).toString("hex");
 const rootDirPath = normalize(resolve("./storage"));
-const supportedPathPrefixes = [
-  "/key_value_stores/default/SDK_CRAWLER_STATISTICS", // SDK_CRAWLER_STATISTICS_*.json
+const publicPathPrefixes = [
+  "/key_value_stores/chapters",
+  "/key_value_stores/novels",
+  "/novels",
+];
+const cachedPathPrefixes = [
   "/key_value_stores/chapters",
   "/key_value_stores/novels",
   "/novels",
@@ -40,34 +47,42 @@ const server = createServer(async (req, res) => {
             pathname.endsWith("/") ? pathname : `${pathname}/`,
             dir,
           );
-          res.writeHead(200, { "Content-Type": mimeTypes.html });
+          res.writeHead(200, { "content-type": mimeTypes.html });
           res.end(html);
         } else if (stat.isFile()) {
-          if (!supportedPathPrefixes.some((path) => pathname.startsWith(path))) {
-            res.writeHead(403, { "Content-Type": mimeTypes.html });
-            res.end(`403: ${pathname} not supported`);
-          } else {
-            readFile(filePath, (err, data) => {
-              if (err) {
-                handleFileNotFound(res, pathname);
-              } else {
-                const ext = extname(pathname).slice(1);
-                res.writeHead(200, {
-                  "Cache-Control": "max-age=31536000",
-                  "Content-Type": mimeTypes[ext] ?? mimeTypes.txt,
-                });
-                res.end(data);
-              }
-            });
+          if (!publicPathPrefixes.some((path) => pathname.startsWith(path))) {
+            if (req.headers.authorization !== auth) {
+              res.writeHead(403, { "content-type": mimeTypes.html });
+              res.end(`403: Forbidden`);
+              return;
+            }
           }
+
+          readFile(filePath, (err, data) => {
+            if (err) {
+              handleFileNotFound(res, pathname);
+            } else {
+              const ext = extname(pathname).slice(1);
+              const headers: OutgoingHttpHeaders = {
+                "content-type": mimeTypes[ext] ?? mimeTypes.txt,
+              };
+              if (
+                cachedPathPrefixes.some((path) => pathname.startsWith(path))
+              ) {
+                headers["cache-control"] = "max-age=604800";
+              }
+              res.writeHead(200, headers);
+              res.end(data);
+            }
+          });
         } else {
           handleFileNotFound(res, pathname);
         }
       }
     });
   } catch (err) {
-    res.writeHead(500, { "Content-Type": mimeTypes.html });
-    res.end(`500: internal error`);
+    res.writeHead(500, { "content-type": mimeTypes.html });
+    res.end(`500: Internal Error`);
   }
 }).on("error", (err) => {
   console.error(err);
@@ -113,6 +128,8 @@ const dirContentToHtml = async (relativedPath: string, dir: Dir) => {
   return html;
 };
 
-server.listen(port, () => {
-  console.log(`Server is listening on port ${port}, directory ${rootDirPath}`);
+server.listen(port, '0.0.0.0', () => {
+  console.log(
+    `Server is listening on http://0.0.0.0:${port} with auth=${auth}, directory ${rootDirPath}`,
+  );
 });
