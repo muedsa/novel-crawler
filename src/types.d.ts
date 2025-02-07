@@ -47,8 +47,8 @@ type NovelChapterPartInfo = {
 
 type NovelCrawlerStatistic =
   | (StatisticPersistedState & {
-      status: string;
+      status: "running";
     })
   | {
-      status: string;
+      status: "stop";
     };

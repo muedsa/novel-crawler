@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { readFile, opendirSync, stat, Dir } from "node:fs";
+import { readFile, opendirSync, stat, Dir, readFileSync } from "node:fs";
 import {
   createServer,
   IncomingMessage,
@@ -7,11 +7,12 @@ import {
   OutgoingHttpHeaders,
 } from "node:http";
 import { join, normalize, resolve, extname } from "node:path";
-import { getCrawlerStatistics, getRuntimeConfig } from "./store.js";
-import { NovelCrawlerStatistic } from "./types.js";
+import { NovelCrawlerStatistic, RuntimeConfig } from "./types.js";
+import { buildMetrics } from "./utils.js";
+import { StatisticPersistedState } from "crawlee";
 
 const port = parseInt(process.argv[2] || "8233");
-const auth = process.argv[3] || randomBytes(8).toString("hex");
+const bearerToken = process.argv[3] || randomBytes(8).toString("hex");
 const rootDirPath = normalize(resolve("./storage"));
 const publicPathPrefixes = [
   "/key_value_stores/chapters",
@@ -42,6 +43,8 @@ const server = createServer(async (req, res) => {
     const pathname = decodeURIComponent(parsedUrl.pathname);
     if (pathname === "/monitor.json") {
       handledMonitor(req, res);
+    } else if (pathname === "/metrics") {
+      handledMetrics(req, res);
     } else {
       handleStaticResource(pathname, req, res);
     }
@@ -103,30 +106,48 @@ const handledMonitor = async (req: IncomingMessage, res: ServerResponse) => {
   if (!validateAuth(req, res)) {
     return;
   }
-  const runtimeConfig = await getRuntimeConfig();
-  let data: NovelCrawlerStatistic = {
-    status: "down",
-  };
+  const data = await getStatistic();
   res.writeHead(200, { "content-type": mimeTypes.json });
-  if (typeof runtimeConfig?.crawlerId === "number") {
-    const statistics = await getCrawlerStatistics(runtimeConfig.crawlerId);
-    if (statistics) {
-      data = {
-        status: "up",
-        ...statistics,
-      };
-    }
-  }
   res.end(JSON.stringify(data));
 };
 
+const handledMetrics = async (req: IncomingMessage, res: ServerResponse) => {
+  if (!validateAuth(req, res)) {
+    return;
+  }
+  const statistic = await getStatistic();
+  res.writeHead(200, { "content-type": mimeTypes.txt });
+  res.end(buildMetrics(statistic));
+};
+
 const validateAuth = (req: IncomingMessage, res: ServerResponse) => {
-  const success = req.headers.authorization === auth;
+  const success = req.headers.authorization === `Bearer ${bearerToken}`;
   if (!success) {
     res.writeHead(403, { "content-type": mimeTypes.html });
     res.end(`403: Forbidden`);
   }
   return success;
+};
+
+const getStatistic = async () => {
+  const runtimeConfig = getJsonFromFile<RuntimeConfig>(
+    `/key_value_stores/config/runtime.json`,
+  );
+  let data: NovelCrawlerStatistic = {
+    status: "stop",
+  };
+  if (typeof runtimeConfig?.crawlerId === "number") {
+    const statistics = getJsonFromFile<StatisticPersistedState>(
+      `/key_value_stores/default/SDK_CRAWLER_STATISTICS_${runtimeConfig.crawlerId}.json`,
+    );
+    if (statistics) {
+      data = {
+        status: "running",
+        ...statistics,
+      };
+    }
+  }
+  return data;
 };
 
 const handleFileNotFound = (res: ServerResponse, pathname: string) => {
@@ -169,11 +190,20 @@ const dirContentToHtml = async (relativedPath: string, dir: Dir) => {
   return html;
 };
 
+const getJsonFromFile = <T>(path: string): T | null => {
+  const filePath = join(rootDirPath, path);
+  try {
+    return JSON.parse(readFileSync(filePath, "utf-8")) as T;
+  } catch (e) {
+    return null;
+  }
+};
+
 server.listen(port, () => {
   console.log("Novel server is listening on", server.address());
   console.log(
     `Novel server setting\n`,
-    `Auth=${auth}\n`,
+    `BearerToken=${bearerToken}\n`,
     `Directory=${rootDirPath}\n`,
   );
 });
