@@ -1,4 +1,4 @@
-import { KeyValueStore } from "crawlee";
+import { KeyValueStore, StatisticPersistedState } from "crawlee";
 
 const configStore = await KeyValueStore.open("config");
 const novelsStore = await KeyValueStore.open("novels");
@@ -53,6 +53,11 @@ const saveNovelChapterPart = async (
     chapterPart,
   );
 
+const getCrawlerStatistics = async (crawlerId: number) =>
+  await KeyValueStore.getValue<StatisticPersistedState>(
+    `SDK_CRAWLER_STATISTICS_${crawlerId}`,
+  );
+
 const novelDir = "storage/novels";
 
 export {
@@ -64,5 +69,6 @@ export {
   saveNovelInfo,
   getNovelChapterPart,
   saveNovelChapterPart,
+  getCrawlerStatistics,
   novelDir,
 };

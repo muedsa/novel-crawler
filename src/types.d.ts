@@ -1,3 +1,5 @@
+import { StatisticPersistedState } from "crawlee";
+
 type NovelConfig = {
   novelId: string;
   endPageNum: number;
@@ -18,6 +20,7 @@ type BaseConfig = {
 };
 
 type RuntimeConfig = {
+  crawlerId: number | null;
   novelIndex: number;
   lastPageNum: number;
 };
@@ -41,3 +44,11 @@ type NovelChapterPartInfo = {
   part: number;
   maxPart: number;
 };
+
+interface StatisticPersistedStateWithStatus extends StatisticPersistedState {
+  status: string;
+}
+
+type NovelCrawlerStatistic =
+  | StatisticPersistedStateWithStatus
+  | { status: string };

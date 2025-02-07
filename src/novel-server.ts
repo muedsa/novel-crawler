@@ -1,8 +1,14 @@
-import { randomBytes } from "crypto";
-import { readFile, opendirSync, stat, Dir } from "fs";
-import { OutgoingHttpHeaders } from "http";
-import { createServer } from "http";
-import { join, normalize, resolve, extname } from "path";
+import { randomBytes } from "node:crypto";
+import { readFile, opendirSync, stat, Dir } from "node:fs";
+import {
+  createServer,
+  IncomingMessage,
+  ServerResponse,
+  OutgoingHttpHeaders,
+} from "node:http";
+import { join, normalize, resolve, extname } from "node:path";
+import { getCrawlerStatistics, getRuntimeConfig } from "./store.js";
+import { NovelCrawlerStatistic } from "./types.js";
 
 const port = parseInt(process.argv[2] || "8233");
 const auth = process.argv[3] || randomBytes(8).toString("hex");
@@ -34,52 +40,11 @@ const server = createServer(async (req, res) => {
   try {
     const parsedUrl = new URL(`http://localhost${req.url ?? "/"}`);
     const pathname = decodeURIComponent(parsedUrl.pathname);
-
-    const filePath = join(rootDirPath, pathname);
-
-    stat(filePath, async (error, stat) => {
-      if (error) {
-        handleFileNotFound(res, pathname);
-      } else {
-        if (stat.isDirectory()) {
-          const dir = opendirSync(filePath);
-          const html = await dirContentToHtml(
-            pathname.endsWith("/") ? pathname : `${pathname}/`,
-            dir,
-          );
-          res.writeHead(200, { "content-type": mimeTypes.html });
-          res.end(html);
-        } else if (stat.isFile()) {
-          if (!publicPathPrefixes.some((path) => pathname.startsWith(path))) {
-            if (req.headers.authorization !== auth) {
-              res.writeHead(403, { "content-type": mimeTypes.html });
-              res.end(`403: Forbidden`);
-              return;
-            }
-          }
-
-          readFile(filePath, (err, data) => {
-            if (err) {
-              handleFileNotFound(res, pathname);
-            } else {
-              const ext = extname(pathname).slice(1);
-              const headers: OutgoingHttpHeaders = {
-                "content-type": mimeTypes[ext] ?? mimeTypes.txt,
-              };
-              if (
-                cachedPathPrefixes.some((path) => pathname.startsWith(path))
-              ) {
-                headers["cache-control"] = "max-age=604800";
-              }
-              res.writeHead(200, headers);
-              res.end(data);
-            }
-          });
-        } else {
-          handleFileNotFound(res, pathname);
-        }
-      }
-    });
+    if (pathname === "/monitor.json") {
+      handledMonitor(req, res);
+    } else {
+      handleStaticResource(pathname, req, res);
+    }
   } catch (err) {
     res.writeHead(500, { "content-type": mimeTypes.html });
     res.end(`500: Internal Error`);
@@ -88,7 +53,83 @@ const server = createServer(async (req, res) => {
   console.error(err);
 });
 
-const handleFileNotFound = (res: any, pathname: string) => {
+const handleStaticResource = async (
+  pathname: string,
+  req: IncomingMessage,
+  res: ServerResponse,
+) => {
+  const filePath = join(rootDirPath, pathname);
+  stat(filePath, async (error, stat) => {
+    if (error) {
+      handleFileNotFound(res, pathname);
+    } else {
+      if (stat.isDirectory()) {
+        const dir = opendirSync(filePath);
+        const html = await dirContentToHtml(
+          pathname.endsWith("/") ? pathname : `${pathname}/`,
+          dir,
+        );
+        res.writeHead(200, { "content-type": mimeTypes.html });
+        res.end(html);
+      } else if (stat.isFile()) {
+        if (!publicPathPrefixes.some((path) => pathname.startsWith(path))) {
+          if (!validateAuth(req, res)) {
+            return;
+          }
+        }
+        readFile(filePath, (err, data) => {
+          if (err) {
+            handleFileNotFound(res, pathname);
+          } else {
+            const ext = extname(pathname).slice(1);
+            const headers: OutgoingHttpHeaders = {
+              "content-type": mimeTypes[ext] ?? mimeTypes.txt,
+            };
+            if (cachedPathPrefixes.some((path) => pathname.startsWith(path))) {
+              headers["cache-control"] = "max-age=604800";
+            }
+            res.writeHead(200, headers);
+            res.end(data);
+          }
+        });
+      } else {
+        handleFileNotFound(res, pathname);
+      }
+    }
+  });
+};
+
+const handledMonitor = async (req: IncomingMessage, res: ServerResponse) => {
+  if (!validateAuth(req, res)) {
+    return;
+  }
+  const runtimeConfig = await getRuntimeConfig();
+  let data: NovelCrawlerStatistic = {
+    status: "down",
+  };
+  res.writeHead(200, { "content-type": mimeTypes.json });
+  if (typeof runtimeConfig?.crawlerId === "number") {
+    const statistics = await getCrawlerStatistics(runtimeConfig.crawlerId);
+    if (statistics) {
+      data = {
+        status: "up",
+        ...statistics,
+      };
+    }
+  }
+  res.end(JSON.stringify(data));
+};
+
+const validateAuth = (req: IncomingMessage, res: ServerResponse) => {
+  const success = req.headers.authorization === auth;
+  if (!success) {
+    res.writeHead(403, { "content-type": mimeTypes.html });
+    res.end(`403: Forbidden`);
+  }
+  return success;
+};
+
+const handleFileNotFound = (res: ServerResponse, pathname: string) => {
   res.writeHead(404, { "Content-Type": mimeTypes.html });
   res.end(`404: ${pathname} not found`);
 };
@@ -128,7 +169,7 @@ const dirContentToHtml = async (relativedPath: string, dir: Dir) => {
   return html;
 };
 
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, "0.0.0.0", () => {
   console.log(
     `Server is listening on http://0.0.0.0:${port} with auth=${auth}, directory ${rootDirPath}`,
   );

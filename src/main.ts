@@ -9,9 +9,11 @@ import {
 console.log("novel-crawler launch!");
 let config = await getAndValidBaseConfig();
 const runtimeConfig = (await getRuntimeConfig()) ?? {
+  crawlerId: null,
   novelIndex: 0,
   lastPageNum: 1,
 };
+runtimeConfig.crawlerId = null;
 while (runtimeConfig.novelIndex < config.novels.length) {
   const novelConfig = config.novels[runtimeConfig.novelIndex];
   if (runtimeConfig.novelIndex >= config.novels.length)
@@ -24,6 +26,8 @@ while (runtimeConfig.novelIndex < config.novels.length) {
     runtimeConfig,
   );
   const crawler = await createNovelCrawler(novelConfig, config, runtimeConfig);
+  runtimeConfig.crawlerId = crawler.stats.id;
+  await saveRuntimeConfig(runtimeConfig);
   await crawler.run([
     config.chapterListUrlTemplate
       .replace("{baseUrl}", config.baseUrl)
@@ -35,6 +39,7 @@ while (runtimeConfig.novelIndex < config.novels.length) {
   console.log("compose novel start!");
   await composeNovel(novelConfig.novelId);
   console.log("compose novel finished!");
+  runtimeConfig.crawlerId = null;
   runtimeConfig.novelIndex++;
   runtimeConfig.lastPageNum = 1;
   await saveRuntimeConfig(runtimeConfig);
