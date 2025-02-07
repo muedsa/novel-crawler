@@ -14,6 +14,12 @@ import {
   saveRuntimeConfig,
 } from "./store.js";
 import { parseNovelChapterPartInfo } from "./utils.js";
+import {
+  NovelConfig,
+  BaseConfig,
+  RuntimeConfig,
+  NovelChapterPart,
+} from "./types.js";
 
 const createNovelCrawler = async (
   novelConfig: NovelConfig,

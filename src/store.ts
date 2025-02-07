@@ -1,4 +1,10 @@
 import { KeyValueStore, StatisticPersistedState } from "crawlee";
+import {
+  BaseConfig,
+  NovelChapterPart,
+  NovelInfo,
+  RuntimeConfig,
+} from "./types.js";
 
 const configStore = await KeyValueStore.open("config");
 const novelsStore = await KeyValueStore.open("novels");

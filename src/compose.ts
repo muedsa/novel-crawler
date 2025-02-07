@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { getNovelChapterPart, getNovelInfo, novelDir } from "./store.js";
 import { parseNovelChapterPartInfo } from "./utils.js";
+import { NovelChapterPartInfo } from "./types.js";
 
 const composeNovel = async (novelId: string): Promise<void> => {
   const novelInfo = await getNovelInfo(novelId);

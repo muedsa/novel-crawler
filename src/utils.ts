@@ -1,3 +1,5 @@
+import { NovelChapterPartInfo } from "./types.js";
+
 const chapterPartInfoRegex = new RegExp("\\(第(\\d+)/(\\d+)页\\)");
 
 const parseNovelChapterPartInfo = (

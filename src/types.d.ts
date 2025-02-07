@@ -45,10 +45,10 @@ type NovelChapterPartInfo = {
   maxPart: number;
 };
 
-interface StatisticPersistedStateWithStatus extends StatisticPersistedState {
-  status: string;
-}
-
 type NovelCrawlerStatistic =
-  | StatisticPersistedStateWithStatus
-  | { status: string };
+  | (StatisticPersistedState & {
+      status: string;
+    })
+  | {
+      status: string;
+    };
