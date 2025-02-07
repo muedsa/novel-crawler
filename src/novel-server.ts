@@ -169,8 +169,11 @@ const dirContentToHtml = async (relativedPath: string, dir: Dir) => {
   return html;
 };
 
-server.listen(port, "0.0.0.0", () => {
+server.listen(port, () => {
+  console.log("Novel server is listening on", server.address());
   console.log(
-    `Server is listening on http://0.0.0.0:${port} with auth=${auth}, directory ${rootDirPath}`,
+    `Novel server setting\n`,
+    `Auth=${auth}\n`,
+    `Directory=${rootDirPath}\n`,
   );
 });
