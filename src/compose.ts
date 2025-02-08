@@ -41,6 +41,7 @@ const composeNovel = async (novelId: string): Promise<void> => {
     const newNovelPath = `${novelDir}/${novelInfo.novelName}.txt`;
     console.log(`Copy file ${novelPath} to ${newNovelPath}`);
     fs.copyFileSync(novelPath, newNovelPath);
+    fs.rmSync(novelPath);
   }
 };
 
