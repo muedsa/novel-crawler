@@ -152,6 +152,7 @@ const getStatistic = async () => {
     runtimeConfig.novelIndex >= 0 &&
     runtimeConfig.novelIndex < config.novels.length
   ) {
+    data.status = runtimeConfig.status;
     const novelId = config.novels[runtimeConfig.novelIndex].novelId;
     const novelInfo = getJsonFromFile<NovelInfo>(
       `/key_value_stores/novels/${novelId}.json`,

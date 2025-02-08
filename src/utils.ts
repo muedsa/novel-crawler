@@ -30,6 +30,8 @@ const getStatusCode = (status: CrawlerStatus) => {
       return 1;
     case "composing":
       return 2;
+    default:
+      return -1;
   }
 };
 
