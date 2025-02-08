@@ -40,7 +40,7 @@ const buildMetrics = (statistic: NovelCrawlerStatistic) => {
   if ("statsId" in statistic) {
     metrics += "# HELP crawler_status 状态\n";
     metrics += "# TYPE crawler_status gauge\n";
-    metrics += `crawler_status{id="${statistic.statsId}",novelName="${statistic.novelName}",pageNum="${statistic.pageNum}",} ${getStatusCode(statistic.status)}\n`;
+    metrics += `crawler_status{id="${statistic.statsId}",progress="${statistic.progress}",novelName="${statistic.novelName}",pageNum="${statistic.pageNum}",} ${getStatusCode(statistic.status)}\n`;
 
     metrics += "# HELP crawler_start_at 开始时间(Timestamp)\n";
     metrics += "# TYPE crawler_start_at gauge\n";
@@ -80,7 +80,7 @@ const buildMetrics = (statistic: NovelCrawlerStatistic) => {
   } else {
     metrics += "# HELP crawler_status 状态\n";
     metrics += "# TYPE crawler_status gauge\n";
-    metrics += `crawler_status{novelName="${statistic.novelName}",pageNum="${statistic.pageNum}",} ${getStatusCode(statistic.status)}\n`;
+    metrics += `crawler_status{progress="${statistic.progress}",novelName="${statistic.novelName}",pageNum="${statistic.pageNum}",} ${getStatusCode(statistic.status)}\n`;
   }
   metrics = metrics.slice(0, -1);
   return metrics;

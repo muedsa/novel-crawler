@@ -143,6 +143,7 @@ const getStatistic = async () => {
   );
   let data: NovelCrawlerStatistic = {
     status: "stop",
+    progress: "",
     novelName: "",
     pageNum: 0,
   };
@@ -152,6 +153,7 @@ const getStatistic = async () => {
     runtimeConfig.novelIndex >= 0 &&
     runtimeConfig.novelIndex < config.novels.length
   ) {
+    data.progress = `${runtimeConfig.novelIndex + 1}/${config.novels.length}`;
     data.status = runtimeConfig.status;
     const novelId = config.novels[runtimeConfig.novelIndex].novelId;
     const novelInfo = getJsonFromFile<NovelInfo>(

@@ -55,11 +55,13 @@ type NovelChapterPartInfo = {
 type NovelCrawlerStatistic =
   | (StatisticPersistedState & {
       status: CrawlerStatus;
+      progress: string;
       novelName: string;
       pageNum: number;
     })
   | {
       status: CrawlerStatus;
+      progress: string;
       novelName: string;
       pageNum: number;
     };
