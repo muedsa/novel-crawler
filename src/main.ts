@@ -24,6 +24,8 @@ while (runtimeConfig.novelIndex < config.novels.length) {
       `Runtime config error, index #${runtimeConfig.novelIndex} of novels(size=${config.novels.length}) is out of range`,
     );
   }
+  runtimeConfig.status = "cralwing";
+  await saveRuntimeConfig(runtimeConfig);
   console.log(
     `crawler ${novelConfig.novelId} satrting!`,
     novelConfig,
