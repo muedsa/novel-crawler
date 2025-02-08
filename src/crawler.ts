@@ -19,6 +19,7 @@ import {
   BaseConfig,
   RuntimeConfig,
   NovelChapterPart,
+  NovelChapterInfo,
 } from "./types.js";
 
 const createNovelCrawler = async (
@@ -80,27 +81,31 @@ const createNovelCrawlerRouter = async (
           if (!novelName) throw new Error("Novel name not found");
 
           // 获取章节列表
-          const chapterInfos = await page.$$eval(
+          const chapterLinks = await page.$$eval(
             config.chapterUrlOfListSelector,
             ($links) =>
               $links.map(($link) => {
                 return {
-                  name: $link.textContent!!,
+                  textContent: $link.textContent!!.trim(),
                   path: $link.getAttribute("href")!!,
                 };
               }),
           );
-          const appendChapters: string[][] = [];
+          const chaptersOfPage: NovelChapterInfo[] = [];
           const requestUrls: Source[] = [];
-          for await (const chapterInfo of chapterInfos) {
-            const chapterUrl = new URL(chapterInfo.path, request.loadedUrl);
+          for await (const chapterLink of chapterLinks) {
+            const chapterUrl = new URL(chapterLink.path, request.loadedUrl);
             const paths = chapterUrl.pathname.split("/");
             const lastUrlPath = paths.pop();
             if (lastUrlPath?.endsWith(".html")) {
               const chapterId = lastUrlPath.split(".").shift()!!;
               const novelIdOfChapterPage = paths.pop()!!;
               if (novelIdOfChapterPage === novelId) {
-                appendChapters.push([chapterId, chapterInfo.name]);
+                chaptersOfPage.push({
+                  novelId: novelIdOfChapterPage,
+                  chapterId: chapterId,
+                  chapterTitle: chapterLink.textContent,
+                });
                 if (!config.focrcedChapterCrawler) {
                   // 如果章节已经存在于Store中，则跳过该章节的爬取，以避免重复爬取
                   const chapterPart = await getNovelChapterPart(
@@ -109,7 +114,7 @@ const createNovelCrawlerRouter = async (
                   );
                   if (
                     !chapterPart ||
-                    !chapterPart.title ||
+                    !chapterPart.chapterTitle ||
                     !chapterPart.content
                   ) {
                     requestUrls.push({
@@ -136,7 +141,7 @@ const createNovelCrawlerRouter = async (
                         );
                         if (
                           !otherChapterPart ||
-                          !otherChapterPart.title ||
+                          !otherChapterPart.chapterTitle ||
                           !otherChapterPart.content
                         ) {
                           requestUrls.push({
@@ -149,7 +154,7 @@ const createNovelCrawlerRouter = async (
                       }
                       console.log(
                         "章节已经存在于Store中，跳过该章节的爬取!",
-                        chapterInfo,
+                        chapterLink,
                       );
                     }
                   }
@@ -162,10 +167,8 @@ const createNovelCrawlerRouter = async (
               }
             }
           }
-          log.info(`第${pageNum}页章节列表: `, appendChapters);
-          pageChapterMap[pageNum] = appendChapters.map(
-            ([chapterId]) => chapterId,
-          );
+          log.info(`第${pageNum}页章节列表: `, chaptersOfPage);
+          pageChapterMap[pageNum] = chaptersOfPage;
           await saveNovelInfo({
             novelId: novelId,
             novelName: novelName,
@@ -218,7 +221,7 @@ const createNovelCrawlerRouter = async (
       const chapterPartData: NovelChapterPart = {
         novelId: novelId,
         chapterPartId: chapterPartId,
-        title: chapterTitle,
+        chapterTitle: chapterTitle,
         content: chapterContent,
       };
       // await pushData(chapterData, novelId);

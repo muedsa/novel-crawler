@@ -7,7 +7,12 @@ import {
   OutgoingHttpHeaders,
 } from "node:http";
 import { join, normalize, resolve, extname } from "node:path";
-import { NovelCrawlerStatistic, RuntimeConfig } from "./types.js";
+import {
+  BaseConfig,
+  NovelCrawlerStatistic,
+  NovelInfo,
+  RuntimeConfig,
+} from "./types.js";
 import { buildMetrics } from "./utils.js";
 import { StatisticPersistedState } from "crawlee";
 
@@ -130,19 +135,35 @@ const validateAuth = (req: IncomingMessage, res: ServerResponse) => {
 };
 
 const getStatistic = async () => {
+  const config = getJsonFromFile<BaseConfig>(
+    "/key_value_stores/config/config.json",
+  );
   const runtimeConfig = getJsonFromFile<RuntimeConfig>(
-    `/key_value_stores/config/runtime.json`,
+    "/key_value_stores/config/runtime.json",
   );
   let data: NovelCrawlerStatistic = {
     status: "stop",
+    novelName: "",
+    pageNum: 0,
   };
-  if (typeof runtimeConfig?.crawlerId === "number") {
+  if (
+    runtimeConfig &&
+    config &&
+    runtimeConfig.novelIndex >= 0 &&
+    runtimeConfig.novelIndex < config.novels.length
+  ) {
+    const novelId = config.novels[runtimeConfig.novelIndex].novelId;
+    const novelInfo = getJsonFromFile<NovelInfo>(
+      `/key_value_stores/novels/${novelId}.json`,
+    );
+    data.novelName = novelInfo?.novelName ?? "";
+    data.pageNum = runtimeConfig.lastPageNum;
     const statistics = getJsonFromFile<StatisticPersistedState>(
       `/key_value_stores/default/SDK_CRAWLER_STATISTICS_${runtimeConfig.crawlerId}.json`,
     );
     if (statistics) {
       data = {
-        status: "running",
+        ...data,
         ...statistics,
       };
     }

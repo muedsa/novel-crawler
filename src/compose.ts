@@ -18,7 +18,7 @@ const composeNovel = async (novelId: string): Promise<void> => {
   }
   const maxPageNum = Object.keys(pageChapterMap).length;
   for (let pageNum = 1; pageNum <= maxPageNum; pageNum++) {
-    const chapterIds = pageChapterMap[pageNum];
+    const chapterIds = pageChapterMap[pageNum].map((c) => c.chapterId);
     if (!chapterIds || chapterIds.length === 0)
       throw new Error(`Novel page #${pageNum} chapterPartIds is empty`);
     for (const chapterId of chapterIds) {
@@ -55,7 +55,7 @@ const composeChapter = async (
     throw new Error(
       `Novel page #${pageNum} chapter '${chapterPartId}' missing`,
     );
-  if (!chapterPart.title)
+  if (!chapterPart.chapterTitle)
     throw new Error(
       `Novel page #${pageNum} chapter '${chapterPartId}' title missing`,
     );
@@ -77,7 +77,7 @@ const composeChapter = async (
       `Novel page #${pageNum} novel '${novelId}' chapter '${chapterPartId}' content not match chapterPartInfoRegex`,
     );
   if (partInfo.part === 1) {
-    chapterContentLines[0] = chapterPart.title;
+    chapterContentLines[0] = chapterPart.chapterTitle;
   } else {
     chapterContentLines.shift();
   }

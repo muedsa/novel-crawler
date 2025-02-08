@@ -12,16 +12,20 @@ const runtimeConfig = (await getRuntimeConfig()) ?? {
   crawlerId: null,
   novelIndex: 0,
   lastPageNum: 1,
+  status: "cralwing",
 };
 runtimeConfig.crawlerId = null;
 while (runtimeConfig.novelIndex < config.novels.length) {
   const novelConfig = config.novels[runtimeConfig.novelIndex];
-  if (runtimeConfig.novelIndex >= config.novels.length)
+  if (runtimeConfig.novelIndex >= config.novels.length) {
+    runtimeConfig.status = "error";
+    await saveRuntimeConfig(runtimeConfig);
     throw new Error(
       `Runtime config error, index #${runtimeConfig.novelIndex} of novels(size=${config.novels.length}) is out of range`,
     );
+  }
   console.log(
-    `crawler ${novelConfig.novelId} satrt!`,
+    `crawler ${novelConfig.novelId} satrting!`,
     novelConfig,
     runtimeConfig,
   );
@@ -37,11 +41,20 @@ while (runtimeConfig.novelIndex < config.novels.length) {
   await crawler.teardown();
   console.log(`crawler ${novelConfig.novelId} finished!`);
   console.log("compose novel start!");
-  await composeNovel(novelConfig.novelId);
+  runtimeConfig.status = "composing";
+  await saveRuntimeConfig(runtimeConfig);
+  try {
+    await composeNovel(novelConfig.novelId);
+  } catch (error) {
+    runtimeConfig.status = "error";
+    await saveRuntimeConfig(runtimeConfig);
+    throw error;
+  }
   console.log("compose novel finished!");
   runtimeConfig.crawlerId = null;
   runtimeConfig.novelIndex++;
   runtimeConfig.lastPageNum = 1;
+  runtimeConfig.status = "stop";
   await saveRuntimeConfig(runtimeConfig);
   config = await getAndValidBaseConfig();
 }

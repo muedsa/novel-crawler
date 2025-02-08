@@ -1,4 +1,8 @@
-import { NovelChapterPartInfo, NovelCrawlerStatistic } from "./types.js";
+import {
+  CrawlerStatus,
+  NovelChapterPartInfo,
+  NovelCrawlerStatistic,
+} from "./types.js";
 
 const chapterPartInfoRegex = new RegExp("\\(第(\\d+)/(\\d+)页\\)");
 
@@ -16,15 +20,25 @@ const parseNovelChapterPartInfo = (
   return partInfo;
 };
 
+const getStatusCode = (status: CrawlerStatus) => {
+  switch (status) {
+    case "error":
+      return -1;
+    case "stop":
+      return 0;
+    case "cralwing":
+      return 1;
+    case "composing":
+      return 2;
+  }
+};
+
 const buildMetrics = (statistic: NovelCrawlerStatistic) => {
   let metrics = "";
-  metrics += "# HELP crawler_status 状态\n";
-  metrics += "# TYPE crawler_status gauge\n";
-  metrics += `crawler_status ${statistic.status === "running" ? 1 : 0}\n`;
-  if (statistic.status === "running") {
-    metrics += "# HELP crawler_stats_id ID\n";
-    metrics += "# TYPE crawler_stats_id gauge\n";
-    metrics += `crawler_stats_id ${statistic.statsId ?? -1}\n`;
+  if ("statsId" in statistic) {
+    metrics += "# HELP crawler_status 状态\n";
+    metrics += "# TYPE crawler_status gauge\n";
+    metrics += `crawler_status{id="${statistic.statsId}",novelName="${statistic.novelName}",pageNum="${statistic.pageNum}",} ${getStatusCode(statistic.status)}\n`;
 
     metrics += "# HELP crawler_start_at 开始时间(Timestamp)\n";
     metrics += "# TYPE crawler_start_at gauge\n";
@@ -61,6 +75,10 @@ const buildMetrics = (statistic: NovelCrawlerStatistic) => {
     metrics += "# TYPE crawler_request_avg_duration_ms gauge\n";
     metrics += `crawler_request_avg_duration_ms{type="finished",} ${statistic.requestAvgFinishedDurationMillis ?? 0}\n`;
     metrics += `crawler_request_avg_duration_ms{type="failed",} ${statistic.requestAvgFailedDurationMillis ?? 0}\n`;
+  } else {
+    metrics += "# HELP crawler_status 状态\n";
+    metrics += "# TYPE crawler_status gauge\n";
+    metrics += `crawler_status{novelName="${statistic.novelName}",pageNum="${statistic.pageNum}",} ${getStatusCode(statistic.status)}\n`;
   }
   metrics = metrics.slice(0, -1);
   return metrics;

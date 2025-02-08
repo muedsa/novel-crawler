@@ -5,6 +5,8 @@ type NovelConfig = {
   endPageNum: number;
 };
 
+type CrawlerStatus = "cralwing" | "composing" | "stop" | "error";
+
 type BaseConfig = {
   baseUrl: string;
   chapterListUrlTemplate: string;
@@ -23,16 +25,21 @@ type RuntimeConfig = {
   crawlerId: number | null;
   novelIndex: number;
   lastPageNum: number;
+  status: CrawlerStatus;
 };
 
-type NovelChapterPart = {
+type NovelChapterInfo = {
   novelId: string;
+  chapterId: string;
+  chapterTitle: string;
+};
+
+type NovelChapterPart = Omit<NovelChapterInfo, "chapterId"> & {
   chapterPartId: string;
-  title: string;
   content: string;
 };
 
-type NovelPageChapterMap = Record<number, string[]>;
+type NovelPageChapterMap = Record<number, NovelChapterInfo[]>;
 
 type NovelInfo = {
   novelId: string;
@@ -47,8 +54,12 @@ type NovelChapterPartInfo = {
 
 type NovelCrawlerStatistic =
   | (StatisticPersistedState & {
-      status: "running";
+      status: CrawlerStatus;
+      novelName: string;
+      pageNum: number;
     })
   | {
-      status: "stop";
+      status: CrawlerStatus;
+      novelName: string;
+      pageNum: number;
     };
