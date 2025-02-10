@@ -51,7 +51,7 @@ const buildMetrics = (statistic: NovelCrawlerStatistic) => {
     metrics += `crawler_runtime_ms ${statistic.crawlerRuntimeMillis ?? 0}\n`;
 
     metrics += "# HELP crawler_request_count 请求统计\n";
-    metrics += "# TYPE crawler_request_count counter\n";
+    metrics += "# TYPE crawler_request_count gauge\n";
     metrics += `crawler_request_count{type="finished",} ${statistic.requestsFinished ?? 0}\n`;
     metrics += `crawler_request_count{type="failed",} ${statistic.requestsFailed ?? 0}\n`;
     metrics += `crawler_request_count{type="retries",} ${statistic.requestsRetries ?? 0}\n`;
