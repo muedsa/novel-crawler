@@ -3,6 +3,7 @@ import { composeNovel, NovelPageMissingError } from "./compose.js";
 import {
   getAndValidBaseConfig,
   getRuntimeConfig,
+  openNovelChapterStore,
   saveRuntimeConfig,
 } from "./store.js";
 
@@ -31,7 +32,13 @@ while (runtimeConfig.novelIndex < config.novels.length) {
     novelConfig,
     runtimeConfig,
   );
-  const crawler = await createNovelCrawler(novelConfig, config, runtimeConfig);
+  const chapterStore = await openNovelChapterStore(novelConfig.novelId);
+  const crawler = await createNovelCrawler(
+    novelConfig,
+    config,
+    runtimeConfig,
+    chapterStore,
+  );
   runtimeConfig.crawlerId = crawler.stats.id;
   await saveRuntimeConfig(runtimeConfig);
   await crawler.run([
@@ -46,7 +53,7 @@ while (runtimeConfig.novelIndex < config.novels.length) {
   runtimeConfig.status = "composing";
   await saveRuntimeConfig(runtimeConfig);
   try {
-    await composeNovel(novelConfig.novelId);
+    await composeNovel(novelConfig.novelId, chapterStore);
   } catch (error) {
     if (error instanceof NovelPageMissingError) {
       if (error.novelId === novelConfig.novelId) {

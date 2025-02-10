@@ -5,6 +5,7 @@ import {
   PlaywrightCrawlingContext,
   Dictionary,
   PlaywrightCrawler,
+  KeyValueStore,
 } from "crawlee";
 import {
   getNovelChapterPart,
@@ -26,6 +27,7 @@ const createNovelCrawler = async (
   novelConfig: NovelConfig,
   config: BaseConfig,
   runtimeConfig: RuntimeConfig,
+  chapterStore: KeyValueStore,
 ) =>
   new PlaywrightCrawler({
     launchContext: {
@@ -39,6 +41,7 @@ const createNovelCrawler = async (
       novelConfig,
       config,
       runtimeConfig,
+      chapterStore,
     ),
     sameDomainDelaySecs: 1,
     maxRequestRetries: 10,
@@ -50,6 +53,7 @@ const createNovelCrawlerRouter = async (
   novelConfig: NovelConfig,
   config: BaseConfig,
   runtimeConfig: RuntimeConfig,
+  chapterStore: KeyValueStore,
 ): Promise<RouterHandler<PlaywrightCrawlingContext<Dictionary>>> => {
   const router = createPlaywrightRouter();
   const pageChapterMap =
@@ -109,6 +113,7 @@ const createNovelCrawlerRouter = async (
                 if (!config.focrcedChapterCrawler) {
                   // 如果章节已经存在于Store中，则跳过该章节的爬取，以避免重复爬取
                   const chapterPart = await getNovelChapterPart(
+                    chapterStore,
                     novelId,
                     chapterId,
                   );
@@ -136,6 +141,7 @@ const createNovelCrawlerRouter = async (
                       while (part <= partInfo.maxPart) {
                         const otherChapterPartId = `${chapterId}_${part}`;
                         const otherChapterPart = await getNovelChapterPart(
+                          chapterStore,
                           novelId,
                           otherChapterPartId,
                         );
@@ -225,7 +231,12 @@ const createNovelCrawlerRouter = async (
         content: chapterContent,
       };
       // await pushData(chapterData, novelId);
-      await saveNovelChapterPart(novelId, chapterPartId, chapterPartData);
+      await saveNovelChapterPart(
+        chapterStore,
+        novelId,
+        chapterPartId,
+        chapterPartData,
+      );
       log.info(`Saved ${chapterTitle} to ${novelId}_${chapterPartId}`, {
         url: request.url,
       });

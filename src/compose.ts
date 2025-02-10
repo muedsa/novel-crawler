@@ -2,8 +2,12 @@ import fs from "node:fs";
 import { getNovelChapterPart, getNovelInfo, novelDir } from "./store.js";
 import { parseNovelChapterPartInfo } from "./utils.js";
 import { NovelChapterPartInfo } from "./types.js";
+import { KeyValueStore } from "crawlee";
 
-const composeNovel = async (novelId: string): Promise<void> => {
+const composeNovel = async (
+  novelId: string,
+  chapterStore: KeyValueStore,
+): Promise<void> => {
   const novelInfo = await getNovelInfo(novelId);
   if (!novelInfo)
     throw new MissingNovelPageError(novelId, 1, `Novel '${novelId}' missing`);
@@ -32,6 +36,7 @@ const composeNovel = async (novelId: string): Promise<void> => {
       );
     for (const chapterId of chapterIds) {
       const firstPartInfo = await composeChapter(
+        chapterStore,
         novelPath,
         novelId,
         chapterId,
@@ -40,7 +45,13 @@ const composeNovel = async (novelId: string): Promise<void> => {
       let part = firstPartInfo.part + 1;
       while (part <= firstPartInfo.maxPart) {
         const otherChapterPartId = `${chapterId}_${part}`;
-        await composeChapter(novelPath, novelId, otherChapterPartId, pageNum);
+        await composeChapter(
+          chapterStore,
+          novelPath,
+          novelId,
+          otherChapterPartId,
+          pageNum,
+        );
         part++;
       }
     }
@@ -55,12 +66,17 @@ const composeNovel = async (novelId: string): Promise<void> => {
 };
 
 const composeChapter = async (
+  chapterStore: KeyValueStore,
   novelPath: string,
   novelId: string,
   chapterPartId: string,
   pageNum: number,
 ): Promise<NovelChapterPartInfo> => {
-  const chapterPart = await getNovelChapterPart(novelId, chapterPartId);
+  const chapterPart = await getNovelChapterPart(
+    chapterStore,
+    novelId,
+    chapterPartId,
+  );
   if (!chapterPart)
     throw new MissingNovelChapterError(
       novelId,

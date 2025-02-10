@@ -8,7 +8,6 @@ import {
 
 const configStore = await KeyValueStore.open("config");
 const novelsStore = await KeyValueStore.open("novels");
-const chaptersStore = await KeyValueStore.open("chapters");
 
 const getBaseConfig = async () =>
   await configStore.getValue<BaseConfig>("config");
@@ -46,15 +45,22 @@ const getNovelInfo = async (novelId: string) =>
 const saveNovelInfo = async (novelInfo: NovelInfo) =>
   await novelsStore.setValue<NovelInfo>(`${novelInfo.novelId}`, novelInfo);
 
-const getNovelChapterPart = async (novelId: string, chapterPartId: string) =>
-  await chaptersStore.getValue<NovelChapterPart>(`${novelId}_${chapterPartId}`);
+const openNovelChapterStore = async (novelId: string) =>
+  await KeyValueStore.open(`chapters/${novelId}`);
+
+const getNovelChapterPart = async (
+  store: KeyValueStore,
+  novelId: string,
+  chapterPartId: string,
+) => await store.getValue<NovelChapterPart>(`${novelId}_${chapterPartId}`);
 
 const saveNovelChapterPart = async (
+  store: KeyValueStore,
   novelId: string,
   chapterPartId: string,
   chapterPart: NovelChapterPart,
 ) =>
-  await chaptersStore.setValue<NovelChapterPart>(
+  await store.setValue<NovelChapterPart>(
     `${novelId}_${chapterPartId}`,
     chapterPart,
   );
@@ -68,6 +74,7 @@ export {
   saveRuntimeConfig,
   getNovelInfo,
   saveNovelInfo,
+  openNovelChapterStore,
   getNovelChapterPart,
   saveNovelChapterPart,
   novelDir,
