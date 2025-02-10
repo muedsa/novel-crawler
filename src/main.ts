@@ -1,5 +1,5 @@
 import { createNovelCrawler } from "./crawler.js";
-import { composeNovel } from "./compose.js";
+import { composeNovel, NovelPageMissingError } from "./compose.js";
 import {
   getAndValidBaseConfig,
   getRuntimeConfig,
@@ -48,6 +48,14 @@ while (runtimeConfig.novelIndex < config.novels.length) {
   try {
     await composeNovel(novelConfig.novelId);
   } catch (error) {
+    if (error instanceof NovelPageMissingError) {
+      if (error.novelId === novelConfig.novelId) {
+        console.log(
+          `missing novel info, reset runtimeConfig.lastPageNum ${runtimeConfig.lastPageNum} to ${error.pageNum}`,
+        );
+        runtimeConfig.lastPageNum = error.pageNum;
+      }
+    }
     runtimeConfig.status = "error";
     await saveRuntimeConfig(runtimeConfig);
     throw error;

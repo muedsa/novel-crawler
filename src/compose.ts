@@ -5,10 +5,15 @@ import { NovelChapterPartInfo } from "./types.js";
 
 const composeNovel = async (novelId: string): Promise<void> => {
   const novelInfo = await getNovelInfo(novelId);
-  if (!novelInfo) throw new Error(`Novel '${novelId}' missing`);
+  if (!novelInfo)
+    throw new MissingNovelPageError(novelId, 1, `Novel '${novelId}' missing`);
   const pageChapterMap = novelInfo.pageChapterMap;
   if (!pageChapterMap || Object.keys(pageChapterMap).length == 0)
-    throw new Error("Novel pageChapterMap is empty");
+    throw new MissingNovelPageError(
+      novelId,
+      1,
+      "Novel pageChapterMap is empty",
+    );
   const novelPath = `${novelDir}/${novelId}.txt`;
   if (!fs.existsSync(novelDir)) {
     fs.mkdirSync(novelDir, { recursive: true });
@@ -20,7 +25,11 @@ const composeNovel = async (novelId: string): Promise<void> => {
   for (let pageNum = 1; pageNum <= maxPageNum; pageNum++) {
     const chapterIds = pageChapterMap[pageNum].map((c) => c.chapterId);
     if (!chapterIds || chapterIds.length === 0)
-      throw new Error(`Novel page #${pageNum} chapterPartIds is empty`);
+      throw new MissingNovelPageError(
+        novelId,
+        pageNum,
+        `Novel page #${pageNum} chapterPartIds is empty`,
+      );
     for (const chapterId of chapterIds) {
       const firstPartInfo = await composeChapter(
         novelPath,
@@ -53,15 +62,24 @@ const composeChapter = async (
 ): Promise<NovelChapterPartInfo> => {
   const chapterPart = await getNovelChapterPart(novelId, chapterPartId);
   if (!chapterPart)
-    throw new Error(
+    throw new MissingNovelChapterError(
+      novelId,
+      pageNum,
+      chapterPartId,
       `Novel page #${pageNum} chapter '${chapterPartId}' missing`,
     );
   if (!chapterPart.chapterTitle)
-    throw new Error(
+    throw new MissingNovelChapterError(
+      novelId,
+      pageNum,
+      chapterPartId,
       `Novel page #${pageNum} chapter '${chapterPartId}' title missing`,
     );
   if (!chapterPart.content)
-    throw new Error(
+    throw new MissingNovelChapterError(
+      novelId,
+      pageNum,
+      chapterPartId,
       `Novel page #${pageNum} chapter '${chapterPartId}' content missing`,
     );
 
@@ -69,12 +87,18 @@ const composeChapter = async (
   let chapterContentLines = chapterContent.split("\n");
   const firstLine = chapterContentLines[0];
   if (!chapterPart.content.startsWith(firstLine))
-    throw new Error(
+    throw new MissingNovelChapterError(
+      novelId,
+      pageNum,
+      chapterPartId,
       `Novel page #${pageNum} novel '${novelId}' chapter '${chapterPartId}' content not start with title`,
     );
   const partInfo = parseNovelChapterPartInfo(firstLine);
   if (!partInfo)
-    throw new Error(
+    throw new MissingNovelChapterError(
+      novelId,
+      pageNum,
+      chapterPartId,
       `Novel page #${pageNum} novel '${novelId}' chapter '${chapterPartId}' content not match chapterPartInfoRegex`,
     );
   if (partInfo.part === 1) {
@@ -104,4 +128,33 @@ const composeChapter = async (
   return partInfo;
 };
 
-export { composeNovel };
+class MissingNovelPageError extends Error {
+  novelId: string;
+  pageNum: number;
+
+  constructor(novelId: string, pageNum: number, message: string) {
+    super(message);
+    this.novelId = novelId;
+    this.pageNum = pageNum;
+  }
+}
+
+class MissingNovelChapterError extends MissingNovelPageError {
+  chapterPartId: string;
+
+  constructor(
+    novelId: string,
+    pageNum: number,
+    chapterPartId: string,
+    message: string,
+  ) {
+    super(novelId, pageNum, message);
+    this.chapterPartId = chapterPartId;
+  }
+}
+
+export {
+  composeNovel,
+  MissingNovelPageError as NovelPageMissingError,
+  MissingNovelChapterError as NovelChapterMissingError,
+};
