@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { getNovelChapterPart, getNovelInfo, novelDir } from "./store.js";
-import { parseNovelChapterPartInfo } from "./utils.js";
+import { getChapterPartId, parseNovelChapterPartInfo } from "./utils.js";
 import { BaseConfig, NovelChapterPartInfo } from "./types.js";
 import { KeyValueStore } from "crawlee";
 
@@ -41,17 +41,24 @@ const composeNovel = async (
         chapterStore,
         novelPath,
         novelId,
+        novelInfo.novelName,
         chapterId,
         pageNum,
       );
       let part = firstPartInfo.part + 1;
       while (part <= firstPartInfo.maxPart) {
-        const otherChapterPartId = `${chapterId}_${part}`;
+        const otherChapterPartId = getChapterPartId(
+          config,
+          novelId,
+          chapterId,
+          part,
+        );
         await composeChapter(
           config,
           chapterStore,
           novelPath,
           novelId,
+          novelInfo.novelName,
           otherChapterPartId,
           pageNum,
         );
@@ -73,6 +80,7 @@ const composeChapter = async (
   chapterStore: KeyValueStore,
   novelPath: string,
   novelId: string,
+  novelName: string,
   chapterPartId: string,
   pageNum: number,
 ): Promise<NovelChapterPartInfo> => {
@@ -102,31 +110,28 @@ const composeChapter = async (
       chapterPartId,
       `Novel page #${pageNum} chapter '${chapterPartId}' content missing`,
     );
-
-  let chapterContent = chapterPart.content;
-  let chapterContentLines = chapterContent.split("\n");
-  const firstLine = chapterContentLines[0];
-  if (!chapterPart.content.startsWith(firstLine))
-    throw new MissingNovelChapterError(
-      novelId,
-      pageNum,
-      chapterPartId,
-      `Novel page #${pageNum} novel '${novelId}' chapter '${chapterPartId}' content not start with title`,
-    );
-  const partInfo = parseNovelChapterPartInfo(firstLine);
-  if (!partInfo)
+  let partInfo = parseNovelChapterPartInfo(
+    config,
+    novelName,
+    chapterPart.chapterTitle,
+    chapterPart.content,
+  );
+  if (config.partInfoOfChapterContentRegex && !partInfo)
     throw new MissingNovelChapterError(
       novelId,
       pageNum,
       chapterPartId,
       `Novel page #${pageNum} novel '${novelId}' chapter '${chapterPartId}' content not match chapterPartInfoRegex`,
     );
+  partInfo = partInfo ?? {
+    part: 1,
+    maxPart: 1,
+    content: chapterPart.content,
+  };
+  let chapterContent = partInfo.content;
   if (partInfo.part === 1) {
-    chapterContentLines[0] = chapterPart.chapterTitle;
-  } else {
-    chapterContentLines.shift();
+    chapterContent = `${chapterPart.chapterTitle}\n${chapterContent}`;
   }
-  chapterContent = chapterContentLines.join("\n");
   if (partInfo.part == partInfo.maxPart) {
     chapterContent += config.chapterSuffixWhenCompose;
   } else {
@@ -134,7 +139,7 @@ const composeChapter = async (
   }
   fs.appendFileSync(novelPath, chapterContent);
   console.log(
-    `Novel page #${pageNum} chapter ${firstLine}(novelId:${novelId}, chapterPartId:${chapterPartId}) composed to ${novelPath}`,
+    `Novel page #${pageNum} chapter ${chapterPart.chapterTitle}(novelId:${novelId}, chapterPartId:${chapterPartId}) composed to ${novelPath}`,
   );
   return partInfo;
 };

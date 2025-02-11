@@ -1,23 +1,67 @@
 import {
+  BaseConfig,
   CrawlerStatus,
   NovelChapterPartInfo,
   NovelCrawlerStatistic,
 } from "./types.js";
 
-const chapterPartInfoRegex = new RegExp("\\(第(\\d+)/(\\d+)页\\)");
+const convertUrlToRegExp = (url: string) =>
+  url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const parseNovelChapterPartInfo = (
-  firstLine: string,
+  config: BaseConfig,
+  novelName: string,
+  chapterTitle: string,
+  chapterContent: string,
 ): NovelChapterPartInfo | null => {
-  const matchResult = firstLine.match(chapterPartInfoRegex);
-  if (!matchResult || !matchResult[1] || !matchResult[2]) {
+  let partInfo = {
+    part: 1,
+    maxPart: 1,
+    content: chapterContent,
+  };
+  if (!config.partInfoOfChapterContentRegex) return partInfo;
+  const regExp = new RegExp(
+    config.partInfoOfChapterContentRegex
+      .replace(/\${novelName}/g, novelName)
+      .replace(/\${chapterTitle}/g, chapterTitle),
+  );
+  const matchResult = chapterContent.match(regExp);
+  if (!matchResult) {
     return null;
   }
-  const partInfo: NovelChapterPartInfo = {
-    part: parseInt(matchResult[1]),
-    maxPart: parseInt(matchResult[2]),
-  };
+  if (matchResult.groups?.part) {
+    partInfo.part = parseInt(matchResult.groups.part);
+  }
+  partInfo.maxPart = matchResult.groups?.maxPart
+    ? parseInt(matchResult.groups.maxPart)
+    : partInfo.part;
+  partInfo.content = config.removePartInfoLineOfChapterContentWhenCompose
+    ? chapterContent.replace(matchResult[0], "")
+    : chapterContent;
   return partInfo;
+};
+
+const getChapterPartId = (
+  config: BaseConfig,
+  novelId: string,
+  chapterId: string,
+  part: number,
+) => {
+  let chapterPartId = config.chapterPartIdTemplate
+    .replace(/\${novelId}/g, novelId)
+    .replace(/\${chapterId}/g, chapterId);
+  if (Array.isArray(config.partPathTemplates)) {
+    if (part < 1 || part - 1 >= config.partPathTemplates.length)
+      throw Error(
+        `not resolve partPathTemplate for novelId:${novelId} chapterId:${chapterId} part: ${part}`,
+      );
+    const partPath = config.partPathTemplates[part - 1].replace(
+      /\${part}/g,
+      part.toString(),
+    );
+    chapterPartId = chapterPartId.replace(/\${partPath}/g, partPath);
+  }
+  return chapterPartId;
 };
 
 const getStatusCode = (status: CrawlerStatus) => {
@@ -86,4 +130,9 @@ const buildMetrics = (statistic: NovelCrawlerStatistic) => {
   return metrics;
 };
 
-export { parseNovelChapterPartInfo, buildMetrics };
+export {
+  convertUrlToRegExp,
+  parseNovelChapterPartInfo,
+  getChapterPartId,
+  buildMetrics,
+};

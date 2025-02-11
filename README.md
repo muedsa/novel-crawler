@@ -9,7 +9,9 @@ Create file `storage\key_value_stores\config\config.json`
 ```json
 {
   "baseUrl": "http://example.com",
-  "chapterListUrlTemplate": "${baseUrl}/${otherPath0}${novelId}/page${pageNum}.html",
+  "chapterListUrlTemplate": "${baseUrl}${otherPath0}/${novelId}/page${pageNum}.html",
+  "novelIdAndPageNumOfChapterListUrlRegExp": "${baseUrl}${otherPath0}/(?<novelId>[\\w-]+)/page(?<pageNum>\\d+)\\.html",
+  "chapterIdAndPartOfChapterUrlRegExp": "${baseUrl}${otherPath0}/${novelId}/(?<chapterId>\\d+)(_(?<part>\\d+))?\\.html",
   "novels": [
     {
       "novelId": "l116-116389",
@@ -18,11 +20,16 @@ Create file `storage\key_value_stores\config\config.json`
     }
   ],
   "novelNameOfListSelector": "body > div.container > div.row.row-detail > div > div > div.info > div.top > h1",
+  "loadChapterOfListBtnSelector": "#button_show_all_chatper",
   "chapterUrlOfListSelector": "body > div.container > div.row.row-section > div > div:nth-child(4) > ul.section-list > li > a",
   "nextPageUrlOfListSelector": "body > div.container > div.row.row-section > div > div.listpage > span.right > a",
   "titleOfChapterSelector": "#container > div > div > div.reader-main > h1",
   "contentOfChapterSelector": "#content",
   "nextPageUrlOfChapterSelector": "#container > div > div > div.reader-main > div.section-opt.m-bottom-opt > a:has-text(\"下一页\")",
+  "chapterPartIdTemplate": "${chapterId}${partPath}",
+  "partPathTemplates": ["", "_${part}"],
+  "partInfoOfChapterContentRegex": "${chapterTitle} \\(第(?<part>\\d+)/(?<maxPart>\\d+)页\\)\n",
+  "removePartInfoLineOfChapterContentWhenCompose": true,
   "chapterSuffixWhenCompose": "\n　　\n　　\n",
   "chapterPartSuffixWhenCompose": "\n",
   "removedContentRegExpList": [

@@ -11,14 +11,21 @@ type CrawlerStatus = "cralwing" | "composing" | "stop" | "error";
 type BaseConfig = {
   baseUrl: string;
   chapterListUrlTemplate: string;
+  novelIdAndPageNumOfChapterListUrlRegExp: string | null;
+  chapterIdAndPartOfChapterUrlRegExp: string;
   novels: NovelConfig[];
   novelNameOfListSelector: string;
+  loadChapterOfListBtnSelector: string | null;
   chapterUrlOfListSelector: string;
   nextPageUrlOfListSelector: string;
   titleOfChapterSelector: string;
   contentOfChapterSelector: string;
   nextPageUrlOfChapterSelector: string;
   removedContentRegExpList: string[];
+  chapterPartIdTemplate: string;
+  partPathTemplates: string[] | null;
+  partInfoOfChapterContentRegex: string | null;
+  removePartInfoLineOfChapterContentWhenCompose: boolean;
   chapterSuffixWhenCompose: string;
   chapterPartSuffixWhenCompose: string;
   disableChapterCrawler: boolean;
@@ -54,6 +61,7 @@ type NovelInfo = {
 type NovelChapterPartInfo = {
   part: number;
   maxPart: number;
+  content: string;
 };
 
 type NovelCrawlerStatistic =

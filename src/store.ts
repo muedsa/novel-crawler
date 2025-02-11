@@ -1,4 +1,4 @@
-import { KeyValueStore, StatisticPersistedState } from "crawlee";
+import { KeyValueStore } from "crawlee";
 import {
   BaseConfig,
   NovelChapterPart,
@@ -18,6 +18,15 @@ const getAndValidBaseConfig = async () => {
   if (!config.baseUrl) throw new Error("Novel config baseUrl not found");
   if (!config.chapterListUrlTemplate)
     throw new Error("Novel config chapterListUrlTemplate not found");
+  if (!config.chapterIdAndPartOfChapterUrlRegExp)
+    throw new Error(
+      "Novel config chapterIdAndPartOfChapterUrlRegExp not found",
+    );
+  if (!config.chapterIdAndPartOfChapterUrlRegExp.includes("(?<chapterId>")) {
+    throw new Error(
+      "Novel config chapterIdAndPartOfChapterUrlRegExp must has chapterId match group, example: (?<chapterId>\\d+)",
+    );
+  }
   if (!config.novels || config.novels.length <= 0)
     throw new Error("Novel config novels not found");
   if (!config.chapterUrlOfListSelector)

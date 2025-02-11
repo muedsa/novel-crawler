@@ -46,7 +46,7 @@ while (runtimeConfig.novelIndex < config.novels.length) {
     .replace(/\${novelId}/g, novelConfig.novelId)
     .replace(/\${pageNum}/g, runtimeConfig.lastPageNum.toString());
   novelConfig.otherPaths.forEach((otherPath, index) => {
-    const regExp = new RegExp(`\\\${otherPath${index}}`, 'g');
+    const regExp = new RegExp(`\\\${otherPath${index}}`, "g");
     url = url.replace(regExp, otherPath);
   });
   await crawler.run([url]);
