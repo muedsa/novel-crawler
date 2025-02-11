@@ -1,12 +1,13 @@
 import fs from "node:fs";
 import { getNovelChapterPart, getNovelInfo, novelDir } from "./store.js";
 import { parseNovelChapterPartInfo } from "./utils.js";
-import { NovelChapterPartInfo } from "./types.js";
+import { BaseConfig, NovelChapterPartInfo } from "./types.js";
 import { KeyValueStore } from "crawlee";
 
 const composeNovel = async (
   novelId: string,
   chapterStore: KeyValueStore,
+  config: BaseConfig,
 ): Promise<void> => {
   const novelInfo = await getNovelInfo(novelId);
   if (!novelInfo)
@@ -36,6 +37,7 @@ const composeNovel = async (
       );
     for (const chapterId of chapterIds) {
       const firstPartInfo = await composeChapter(
+        config,
         chapterStore,
         novelPath,
         novelId,
@@ -46,6 +48,7 @@ const composeNovel = async (
       while (part <= firstPartInfo.maxPart) {
         const otherChapterPartId = `${chapterId}_${part}`;
         await composeChapter(
+          config,
           chapterStore,
           novelPath,
           novelId,
@@ -66,6 +69,7 @@ const composeNovel = async (
 };
 
 const composeChapter = async (
+  config: BaseConfig,
   chapterStore: KeyValueStore,
   novelPath: string,
   novelId: string,
@@ -122,20 +126,11 @@ const composeChapter = async (
   } else {
     chapterContentLines.shift();
   }
-  if (
-    chapterContentLines[chapterContentLines.length - 1] ===
-    "　　（本章未完，请点击下一页继续阅读）"
-  ) {
-    chapterContentLines.pop();
-    while (chapterContentLines[chapterContentLines.length - 1] === "　　") {
-      chapterContentLines.pop();
-    }
-  }
   chapterContent = chapterContentLines.join("\n");
   if (partInfo.part == partInfo.maxPart) {
-    chapterContent += "\n　　\n　　\n";
+    chapterContent += config.chapterSuffixWhenCompose;
   } else {
-    chapterContent += "\n";
+    chapterContent += config.chapterPartSuffixWhenCompose;
   }
   fs.appendFileSync(novelPath, chapterContent);
   console.log(

@@ -53,7 +53,7 @@ while (runtimeConfig.novelIndex < config.novels.length) {
   runtimeConfig.status = "composing";
   await saveRuntimeConfig(runtimeConfig);
   try {
-    await composeNovel(novelConfig.novelId, chapterStore);
+    await composeNovel(novelConfig.novelId, chapterStore, config);
   } catch (error) {
     if (error instanceof NovelPageMissingError) {
       if (error.novelId === novelConfig.novelId) {

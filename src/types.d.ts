@@ -17,6 +17,9 @@ type BaseConfig = {
   titleOfChapterSelector: string;
   contentOfChapterSelector: string;
   nextPageUrlOfChapterSelector: string;
+  removedContentRegExpList: string[];
+  chapterSuffixWhenCompose: string;
+  chapterPartSuffixWhenCompose: string;
   disableChapterCrawler: boolean;
   focrcedChapterCrawler: boolean;
 };

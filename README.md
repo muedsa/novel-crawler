@@ -22,6 +22,14 @@ Create file `storage\key_value_stores\config\config.json`
   "titleOfChapterSelector": "#container > div > div > div.reader-main > h1",
   "contentOfChapterSelector": "#content",
   "nextPageUrlOfChapterSelector": "#container > div > div > div.reader-main > div.section-opt.m-bottom-opt > a:has-text(\"下一页\")",
+  "chapterSuffixWhenCompose": "\n　　\n　　\n",
+  "chapterPartSuffixWhenCompose": "\n",
+  "removedContentRegExpList": [
+    "\u2028",
+    "《${novelName}》XX小说网全文字更新,牢记网址:example.com",
+    "正在手打中，请稍等片刻，内容更新后，请重新刷新页面，即可获取最新更新！",
+    "（本章未完，请点击下一页继续阅读）"
+  ],
   "disableChapterCrawler": false,
   "focrcedChapterCrawler": false
 }

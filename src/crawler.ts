@@ -59,6 +59,7 @@ const createNovelCrawlerRouter = async (
   const pageChapterMap =
     (await getNovelInfo(novelConfig.novelId))?.pageChapterMap ?? {};
 
+  // 章节列表页
   router.addDefaultHandler(
     async ({ request, page, enqueueLinks, addRequests, log }) => {
       log.info(`列表页: ${request.url}...`);
@@ -207,6 +208,7 @@ const createNovelCrawlerRouter = async (
     },
   );
 
+  // 章节页
   router.addHandler("chapter", async ({ request, page, addRequests, log }) => {
     if (config.disableChapterCrawler) return;
     const paths = new URL(request.url).pathname.split("/");
@@ -219,11 +221,17 @@ const createNovelCrawlerRouter = async (
       const chapterTitle = (
         await (await page.$(config.titleOfChapterSelector))!!.innerText()
       ).trim();
-      const chapterContent = (
-        await (await page.$(config.contentOfChapterSelector))!!.innerText()
-      )
-        .trim()
-        .replace(/\u2028/g, "");
+      let chapterContent = await (await page.$(
+        config.contentOfChapterSelector,
+      ))!!.innerText();
+      const novelInfo = (await getNovelInfo(novelId))!!;
+      config.removedContentRegExpList.forEach((r) => {
+        const p = r
+          .replace(/\${novelName}/g, novelInfo.novelName)
+          .replace(/\${chapterTitle}/g, chapterTitle);
+        chapterContent = chapterContent.replace(new RegExp(p, "g"), "");
+      });
+      chapterContent = chapterContent.trim();
       const chapterPartData: NovelChapterPart = {
         novelId: novelId,
         chapterPartId: chapterPartId,
