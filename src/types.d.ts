@@ -2,6 +2,7 @@ import { StatisticPersistedState } from "crawlee";
 
 type NovelConfig = {
   novelId: string;
+  otherPaths: string[];
   endPageNum: number;
 };
 

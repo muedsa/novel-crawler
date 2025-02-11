@@ -41,12 +41,15 @@ while (runtimeConfig.novelIndex < config.novels.length) {
   );
   runtimeConfig.crawlerId = crawler.stats.id;
   await saveRuntimeConfig(runtimeConfig);
-  await crawler.run([
-    config.chapterListUrlTemplate
-      .replace("{baseUrl}", config.baseUrl)
-      .replace("{novelId}", novelConfig.novelId)
-      .replace("{pageNum}", runtimeConfig.lastPageNum.toString()),
-  ]);
+  let url = config.chapterListUrlTemplate
+    .replace(/\${baseUrl}/g, config.baseUrl)
+    .replace(/\${novelId}/g, novelConfig.novelId)
+    .replace(/\${pageNum}/g, runtimeConfig.lastPageNum.toString());
+  novelConfig.otherPaths.forEach((otherPath, index) => {
+    const regExp = new RegExp(`\\\${otherPath${index}}`, 'g');
+    url = url.replace(regExp, otherPath);
+  });
+  await crawler.run([url]);
   await crawler.teardown();
   console.log(`crawler ${novelConfig.novelId} finished!`);
   console.log("compose novel start!");

@@ -9,10 +9,11 @@ Create file `storage\key_value_stores\config\config.json`
 ```json
 {
   "baseUrl": "http://example.com",
-  "chapterListUrlTemplate": "{baseUrl}/{novelId}/page{pageNum}.html",
+  "chapterListUrlTemplate": "${baseUrl}/${otherPath0}${novelId}/page${pageNum}.html",
   "novels": [
     {
       "novelId": "l116-116389",
+      "otherPaths": [""],
       "endPageNum": 0
     }
   ],
