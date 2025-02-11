@@ -44,3 +44,12 @@ Create file `storage\key_value_stores\config\config.json`
 ```
 
 Modify or delete `storage\key_value_stores\config\runtime.json`
+
+```json
+{
+  "crawlerId": 0,
+  "novelIndex": 0,
+  "lastPageNum": 1,
+  "status": "stop"
+}
+```
