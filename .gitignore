@@ -6,3 +6,4 @@ node_modules
 storage
 core
 ecosystem.config.js
+ecosystem.config.cjs
