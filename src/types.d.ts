@@ -24,8 +24,9 @@ type BaseConfig = {
   partPathTemplates: string[] | null; // 适配多页场景下第一页为 chapterId, 第二页为 chapterId_2 的情况
   partInfoOfChapterContentRegex: string | null; // 从章节内容中获取分页信息的正则, 用于章节页多页的场景
   removePartInfoLineOfChapterContentWhenCompose: boolean; // 是否从章节内容中移除partInfoOfChapterContentRegex匹配到的内容
-  chapterSuffixWhenCompose: string; // 组合时在章节结束添加
-  chapterPartSuffixWhenCompose: string; // 组合时在章节单页结束添加
+  chapterTitleSuffixWhenCompose: string; // 组合时添加在标题和正文之间, 通常为换行符
+  chapterSuffixWhenCompose: string; // 组合时在章节结束(即每个章节之间)添加, 通常为换行符
+  chapterPartSuffixWhenCompose: string; // 组合时在章节单页结束(即章节每个页面之间)添加, 通常为换行符
   disableChapterCrawler: boolean; // 不爬取章节页
   focrcedChapterCrawler: boolean; // 强制爬取章节页. 如果focrcedChapterCrawler=false,则如果本地已经储存章节则跳过再次爬取
 };

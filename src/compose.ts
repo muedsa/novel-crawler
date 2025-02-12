@@ -130,7 +130,7 @@ const composeChapter = async (
   };
   let chapterContent = partInfo.content;
   if (partInfo.part === 1) {
-    chapterContent = `${chapterPart.chapterTitle}\n${chapterContent}`;
+    chapterContent = `${chapterPart.chapterTitle}${config.chapterTitleSuffixWhenCompose}${chapterContent}`;
   }
   if (partInfo.part == partInfo.maxPart) {
     chapterContent += config.chapterSuffixWhenCompose;
