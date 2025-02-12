@@ -124,7 +124,7 @@ const buildMetrics = (statistic: NovelCrawlerStatistic) => {
   } else {
     metrics += "# HELP crawler_status 状态\n";
     metrics += "# TYPE crawler_status gauge\n";
-    metrics += `crawler_status{progress="${statistic.progress}",novelName="${statistic.novelName}",pageNum="${statistic.pageNum}",} ${getStatusCode(statistic.status)}\n`;
+    metrics += `crawler_status{id="",progress="${statistic.progress}",novelName="${statistic.novelName}",pageNum="${statistic.pageNum}",} ${getStatusCode(statistic.status)}\n`;
   }
   metrics = metrics.slice(0, -1);
   return metrics;
