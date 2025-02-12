@@ -16,8 +16,13 @@ import {
 import { buildMetrics } from "./utils.js";
 import { StatisticPersistedState } from "crawlee";
 
-const port = parseInt(process.argv[2] || process.env.NOVEL_SERVER_PROT || "8233");
-const bearerToken = process.argv[3] || process.env.NOVEL_SERVER_BEARER_TOKEN || randomBytes(8).toString("hex");
+const port = parseInt(
+  process.argv[2] || process.env.NOVEL_SERVER_PROT || "8233",
+);
+const bearerToken =
+  process.argv[3] ||
+  process.env.NOVEL_SERVER_BEARER_TOKEN ||
+  randomBytes(8).toString("hex");
 const rootDirPath = normalize(resolve("./storage"));
 const publicPathPrefixes = [
   "/key_value_stores/chapters",
