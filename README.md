@@ -30,6 +30,7 @@ Create file `storage\key_value_stores\config\config.json`
   "partPathTemplates": ["", "_${part}"],
   "partInfoOfChapterContentRegex": "${chapterTitle} \\(第(?<part>\\d+)/(?<maxPart>\\d+)页\\)\n",
   "removePartInfoLineOfChapterContentWhenCompose": true,
+  "chapterTitleSuffixWhenCompose": "\n",
   "chapterSuffixWhenCompose": "\n　　\n　　\n",
   "chapterPartSuffixWhenCompose": "\n",
   "removedContentRegExpList": [
@@ -53,3 +54,5 @@ Modify or delete `storage\key_value_stores\config\runtime.json`
   "status": "stop"
 }
 ```
+
+*View [types.d.ts](src/types.d.ts) to learn more.*
