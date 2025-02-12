@@ -15,7 +15,7 @@ import {
   saveRuntimeConfig,
 } from "./store.js";
 import {
-  convertUrlToRegExp,
+  convertToRegExpSafety,
   getChapterPartId,
   parseNovelChapterPartInfo,
 } from "./utils.js";
@@ -77,11 +77,11 @@ const createNovelCrawlerRouter = async (
         // 必须有匹配元组pageNum 否则默认只有1页
         let p = config.novelIdAndPageNumOfChapterListUrlRegExp.replace(
           /\${baseUrl}/g,
-          convertUrlToRegExp(config.baseUrl),
+          convertToRegExpSafety(config.baseUrl),
         );
         novelConfig.otherPaths.forEach((otherPath, index) => {
           const regExp = new RegExp(`\\\${otherPath${index}}`, "g");
-          p = p.replace(regExp, convertUrlToRegExp(otherPath));
+          p = p.replace(regExp, convertToRegExpSafety(otherPath));
         });
         const matchResult = request.url.match(new RegExp(p));
         novelId = matchResult?.groups?.novelId ?? novelId;
@@ -147,11 +147,11 @@ const createNovelCrawlerRouter = async (
             const chapterUrl = new URL(chapterLink.path, request.loadedUrl)
               .href;
             let p = config.chapterIdAndPartOfChapterUrlRegExp
-              .replace(/\${baseUrl}/g, convertUrlToRegExp(config.baseUrl))
-              .replace(/\${novelId}/g, convertUrlToRegExp(novelId));
+              .replace(/\${baseUrl}/g, convertToRegExpSafety(config.baseUrl))
+              .replace(/\${novelId}/g, convertToRegExpSafety(novelId));
             novelConfig.otherPaths.forEach((otherPath, index) => {
               const regExp = new RegExp(`\\\${otherPath${index}}`, "g");
-              p = p.replace(regExp, convertUrlToRegExp(otherPath));
+              p = p.replace(regExp, convertToRegExpSafety(otherPath));
             });
             const matchResult = chapterUrl.match(new RegExp(p));
             const chapterId = matchResult?.groups?.chapterId;
@@ -279,11 +279,11 @@ const createNovelCrawlerRouter = async (
     log.info(`章节页: ${pageTitle}`, { url: request.url });
     if (config.disableChapterCrawler) return;
     let p = config.chapterIdAndPartOfChapterUrlRegExp
-      .replace(/\${baseUrl}/g, convertUrlToRegExp(config.baseUrl))
-      .replace(/\${novelId}/g, novelConfig.novelId);
+      .replace(/\${baseUrl}/g, convertToRegExpSafety(config.baseUrl))
+      .replace(/\${novelId}/g, convertToRegExpSafety(novelConfig.novelId));
     novelConfig.otherPaths.forEach((otherPath, index) => {
       const regExp = new RegExp(`\\\${otherPath${index}}`, "g");
-      p = p.replace(regExp, convertUrlToRegExp(otherPath));
+      p = p.replace(regExp, convertToRegExpSafety(otherPath));
     });
     const matchResult = request.url.match(new RegExp(p));
     if (matchResult && matchResult.groups?.chapterId) {
@@ -307,8 +307,8 @@ const createNovelCrawlerRouter = async (
       const novelInfo = (await getNovelInfo(novelId))!!;
       config.removedContentRegExpList.forEach((r) => {
         const p = r
-          .replace(/\${novelName}/g, novelInfo.novelName)
-          .replace(/\${chapterTitle}/g, chapterTitle);
+          .replace(/\${novelName}/g, convertToRegExpSafety(novelInfo.novelName))
+          .replace(/\${chapterTitle}/g, convertToRegExpSafety(chapterTitle));
         chapterContent = chapterContent.replace(new RegExp(p, "g"), "");
       });
       chapterContent = chapterContent.trim();

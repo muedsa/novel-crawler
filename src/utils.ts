@@ -5,8 +5,8 @@ import {
   NovelCrawlerStatistic,
 } from "./types.js";
 
-const convertUrlToRegExp = (url: string) =>
-  url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const convertToRegExpSafety = (text: string) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const parseNovelChapterPartInfo = (
   config: BaseConfig,
@@ -22,8 +22,8 @@ const parseNovelChapterPartInfo = (
   if (!config.partInfoOfChapterContentRegex) return partInfo;
   const regExp = new RegExp(
     config.partInfoOfChapterContentRegex
-      .replace(/\${novelName}/g, novelName)
-      .replace(/\${chapterTitle}/g, chapterTitle),
+      .replace(/\${novelName}/g, convertToRegExpSafety(novelName))
+      .replace(/\${chapterTitle}/g, convertToRegExpSafety(chapterTitle)),
   );
   const matchResult = chapterContent.match(regExp);
   if (!matchResult) {
@@ -131,7 +131,7 @@ const buildMetrics = (statistic: NovelCrawlerStatistic) => {
 };
 
 export {
-  convertUrlToRegExp,
+  convertToRegExpSafety,
   parseNovelChapterPartInfo,
   getChapterPartId,
   buildMetrics,
