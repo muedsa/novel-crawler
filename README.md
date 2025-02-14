@@ -55,4 +55,4 @@ Modify or delete `storage\key_value_stores\config\runtime.json`
 }
 ```
 
-*View [types.d.ts](src/types.d.ts) to learn more.*
+_View [types.d.ts](src/types.d.ts) to learn more._
