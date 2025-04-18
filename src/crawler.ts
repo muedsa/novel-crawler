@@ -26,6 +26,7 @@ import {
   NovelChapterPart,
   NovelChapterInfo,
 } from "./types.js";
+import { cloudflareChallengePlaywrightHook } from "./cloudflare.js";
 
 const createNovelCrawler = async (
   novelConfig: NovelConfig,
@@ -51,6 +52,10 @@ const createNovelCrawler = async (
     maxRequestRetries: 10,
     //maxRequestsPerCrawl: 100, // Comment this option to scrape the full website.
     headless: true,
+    sessionPoolOptions: {
+      blockedStatusCodes: [],
+    },
+    postNavigationHooks: [cloudflareChallengePlaywrightHook],
   });
 
 const createNovelCrawlerRouter = async (
