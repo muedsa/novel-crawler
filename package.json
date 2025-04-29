@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "@apify/tsconfig": "^0.1.1",
-    "@types/node": "^22.15.2",
+    "@types/node": "^22.15.3",
     "prettier": "3.5.3",
     "tsx": "^4.19.3",
     "typescript": "~5.8.3"
